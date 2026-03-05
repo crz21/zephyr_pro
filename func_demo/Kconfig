@@ -1,0 +1,25 @@
+source "Kconfig.zephyr"
+
+config CUSTOM_BLINKY
+    bool "Enable Blinky Function"
+    default n
+    help
+      This option eable the custom blinky function.
+
+config CUSTOM_UART
+    bool "Enable custom uart Function"
+    default n
+    help
+      This option eable the custom uart function.
+
+config BMP280_PS
+    bool "Enable bmp280 pressure sensor Function"
+    default n
+    help
+      This option eable the bmp280 pressure sensor function.
+
+config CUSTOM_SPI
+    bool "Enable Custom Spi Function"
+    default n
+    help
+      This option eable the Custom Spi function.

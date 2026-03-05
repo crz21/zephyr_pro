@@ -1,0 +1,257 @@
+#include "crs_ble.h"
+
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_vs.h>
+#include <zephyr/bluetooth/services/bas.h>
+#include <zephyr/bluetooth/services/crs.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+
+static bool crf_ntf_enabled;
+// static struct bt_gatt_exchange_params exchange_params;
+static const struct bt_data ad[] = {
+    BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
+    BT_DATA_BYTES(BT_DATA_UUID16_ALL, BT_UUID_16_ENCODE(BT_UUID_CRS_VAL), BT_UUID_16_ENCODE(BT_UUID_BAS_VAL),
+                  BT_UUID_16_ENCODE(BT_UUID_DIS_VAL)),
+#if defined(CONFIG_BT_EXT_ADV)
+    BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
+#endif /* CONFIG_BT_EXT_ADV */
+};
+
+#if !defined(CONFIG_BT_EXT_ADV)
+static const struct bt_data sd[] = {
+    BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
+};
+#endif /* !CONFIG_BT_EXT_ADV */
+
+enum {
+    STATE_CONNECTED,
+    STATE_DISCONNECTED,
+
+    STATE_BITS,
+};
+
+static ATOMIC_DEFINE(state, STATE_BITS);
+
+int set_ble_tx_power(uint16_t handle, int8_t dbm)
+{
+    struct bt_hci_cp_vs_write_tx_power_level* cp;
+    struct bt_hci_rp_vs_write_tx_power_level* rp;
+    struct net_buf *buf, *rsp = NULL;
+    int err;
+
+    // 创建供应商特定命令 (Nordic 专用)
+    buf = bt_hci_cmd_create(BT_HCI_OP_VS_WRITE_TX_POWER_LEVEL, sizeof(*cp));
+    if (!buf) {
+        return -ENOBUFS;
+    }
+
+    cp = net_buf_add(buf, sizeof(*cp));
+    cp->handle_type = BT_HCI_VS_LL_HANDLE_TYPE_CONN;  // 针对当前连接
+    cp->handle = handle;
+    cp->tx_power_level = dbm;  // 目标功率值，如 0, 4, 8
+
+    err = bt_hci_cmd_send_sync(BT_HCI_OP_VS_WRITE_TX_POWER_LEVEL, buf, &rsp);
+    if (err) {
+        printk("Set TX Power failed (err %d)\n", err);
+        return err;
+    }
+
+    rp = (void*)rsp->data;
+    printk("TX Power set to %d dBm (Actual: %d)\n", dbm, rp->selected_tx_power);
+
+    net_buf_unref(rsp);
+    return 0;
+}
+
+void on_le_data_len_updated(struct bt_conn* conn, struct bt_conn_le_data_len_info* info)
+{
+    printk("Step 1 Complete: DLE is now %u. Now starting Step 2: PHY Update...\n", info->tx_max_len);
+    // 获取当前连接的 Handle
+    uint16_t handle;
+    int err = bt_hci_get_conn_handle(conn, &handle);
+
+    if (!err) {
+        // 设置为 +8 dBm (最大功率) 或根据需要设置
+        set_ble_tx_power(handle, 8);
+    }
+}
+void on_le_phy_updated(struct bt_conn* conn, struct bt_conn_le_phy_info* param)
+{
+    printk("LE PHY Updated:Tx 0x%x, Rx 0x%x\n", param->tx_phy, param->rx_phy);
+
+    struct bt_conn_le_data_len_param data_len_param = {
+        .tx_max_len = 251,
+        .tx_max_time = 17040,
+    };
+    bt_conn_le_data_len_update(conn, &data_len_param);
+}
+
+static void connected(struct bt_conn* conn, uint8_t err)
+{
+    if (err) {
+        printk("Connection failed, err 0x%02x %s\n", err, bt_hci_err_to_str(err));
+    } else {
+        printk("Connected\n");
+
+        (void)atomic_set_bit(state, STATE_CONNECTED);
+    }
+
+    const struct bt_conn_le_phy_param phy_param = {
+        .options = BT_CONN_LE_PHY_OPT_NONE,
+        .pref_rx_phy = BT_GAP_LE_PHY_2M,
+        .pref_tx_phy = BT_GAP_LE_PHY_2M,
+    };
+    bt_conn_le_phy_update(conn, &phy_param);
+}
+
+static void disconnected(struct bt_conn* conn, uint8_t reason)
+{
+    printk("Disconnected, reason 0x%02x %s\n", reason, bt_hci_err_to_str(reason));
+
+    (void)atomic_set_bit(state, STATE_DISCONNECTED);
+}
+
+BT_CONN_CB_DEFINE(conn_callbacks) = {
+    .connected = connected,
+    .disconnected = disconnected,
+    .le_data_len_updated = on_le_data_len_updated,
+    .le_phy_updated = on_le_phy_updated,
+};
+
+static void disconnect_option(void)
+{
+    int err;
+
+    if (atomic_test_and_clear_bit(state, STATE_DISCONNECTED)) {
+#if !defined(CONFIG_BT_EXT_ADV)
+        printk("Starting Legacy Advertising (connectable and scannable)\n");
+        err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
+        if (err) {
+            printk("Advertising failed to start (err %d)\n", err);
+            return;
+        }
+
+#else  /* CONFIG_BT_EXT_ADV */
+        printk("Starting Extended Advertising (connectable and non-scannable)\n");
+        err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
+        if (err) {
+            printk("Failed to start extended advertising set (err %d)\n", err);
+            return;
+        }
+#endif /* CONFIG_BT_EXT_ADV */
+    }
+}
+
+static void crs_ntf_changed(bool enabled)
+{
+    crf_ntf_enabled = enabled;
+
+    printk("CRS notification status changed: %s\n", enabled ? "enabled" : "disabled");
+}
+
+static struct bt_crs_cb crs_cb = {
+    .ntf_changed = crs_ntf_changed,
+};
+
+static void auth_cancel(struct bt_conn* conn)
+{
+    char addr[BT_ADDR_LE_STR_LEN];
+
+    bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+
+    printk("Pairing cancelled: %s\n", addr);
+}
+
+static struct bt_conn_auth_cb auth_cb_display = {
+    .cancel = auth_cancel,
+};
+
+void crs_notify(uint8_t* data, uint16_t len)
+{
+    if (crf_ntf_enabled) {
+        bt_crs_notify(data, len);
+    }
+}
+
+static void crs_ble_init(void)
+{
+    int err;
+
+    err = bt_enable(NULL);
+    printk("ble init\n");
+    if (err) {
+        printk("Bluetooth init failed (err %d)\n", err);
+        return;
+    }
+
+    printk("Bluetooth initialized\n");
+
+    bt_conn_auth_cb_register(&auth_cb_display);
+    bt_crs_cb_register(&crs_cb);
+
+#if !defined(CONFIG_BT_EXT_ADV)
+    printk("Starting Legacy Advertising (connectable and scannable)\n");
+    err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
+    if (err) {
+        printk("Advertising failed to start (err %d)\n", err);
+        return;
+    }
+
+#else  /* CONFIG_BT_EXT_ADV */
+    struct bt_le_adv_param adv_param = {
+        .id = BT_ID_DEFAULT,
+        .sid = 0U,
+        .secondary_max_skip = 0U,
+        .options = (BT_LE_ADV_OPT_EXT_ADV | BT_LE_ADV_OPT_CONN | BT_LE_ADV_OPT_CODED),
+        .interval_min = BT_GAP_ADV_FAST_INT_MIN_2,
+        .interval_max = BT_GAP_ADV_FAST_INT_MAX_2,
+        .peer = NULL,
+    };
+    struct bt_le_ext_adv* adv;
+
+    printk("Creating a Coded PHY connectable non-scannable advertising set\n");
+    err = bt_le_ext_adv_create(&adv_param, NULL, &adv);
+    if (err) {
+        printk("Failed to create Coded PHY extended advertising set (err %d)\n", err);
+
+        printk("Creating a non-Coded PHY connectable non-scannable advertising set\n");
+        adv_param.options &= ~BT_LE_ADV_OPT_CODED;
+        err = bt_le_ext_adv_create(&adv_param, NULL, &adv);
+        if (err) {
+            printk("Failed to create extended advertising set (err %d)\n", err);
+            return 0;
+        }
+    }
+
+    printk("Setting extended advertising data\n");
+    err = bt_le_ext_adv_set_data(adv, ad, ARRAY_SIZE(ad), NULL, 0);
+    if (err) {
+        printk("Failed to set extended advertising data (err %d)\n", err);
+        return 0;
+    }
+
+    printk("Starting Extended Advertising (connectable non-scannable)\n");
+    err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
+    if (err) {
+        printk("Failed to start extended advertising set (err %d)\n", err);
+        return;
+    }
+#endif /* CONFIG_BT_EXT_ADV */
+}
+
+void ble_thread(void)
+{
+    crs_ble_init();
+
+    for (;;) {
+        disconnect_option();
+        k_msleep(1);
+    }
+}

@@ -1,0 +1,43 @@
+source "Kconfig.zephyr"
+
+config AS201_IMU
+    bool "Enable AS201 IMU Support"
+    default n
+    help 
+      This option enables the custom AS201 inertial measurement unit driver logic.
+
+config LD2410C_DDRS
+    bool "Enable LD2410C DDRS Support"
+    default n
+    help 
+      This option enables the custom LD2410C Distance Detection Radar Sensor driver logic.
+
+config AHT20_TS
+    bool "Enable AHT20 TS Support"
+    default n
+    help 
+      This option enables the custom AHT20 temperature sensor driver logic.
+
+config BMP280_PS
+    bool "Enable BMP280 Support"
+    default n
+    help 
+      This option enables the custom BMP280 pressure sensor driver logic.
+
+config HRBO
+    bool "Enable HRBO Support"
+    default n
+    help 
+      This option enables the custom Oximeter and Heart-Rate Sensor driver logic.
+
+config BLINK
+    bool "Enable BLINK Support"
+    default n
+    help 
+      This option enables the custom BLINK driver logic.
+
+config DEBUG_UART
+    bool "Enable DEBUG UART Support"
+    default n
+    help 
+      This option enables the custom DEBUG UART driver logic.

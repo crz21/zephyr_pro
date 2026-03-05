@@ -1,0 +1,25 @@
+menuconfig BT_CRS
+	bool "GATT Cr data service"
+
+if BT_CRS
+
+choice BT_CRS_DEFAULT_PERM
+	prompt "Default permissions used for CRS characteristics"
+	default BT_CRS_DEFAULT_PERM_RW
+	help
+	  Default permissions for CRS characteristic attributes
+	  used when no permission is set for the report.
+	  Used also for boot reports.
+
+config BT_CRS_DEFAULT_PERM_RW
+	bool "Read and write allowed"
+
+config BT_CRS_DEFAULT_PERM_RW_ENCRYPT
+	bool "Require encryption for access"
+
+config BT_CRS_DEFAULT_PERM_RW_AUTHEN
+	bool "Require encryption and authentication for access"
+
+endchoice
+
+endif

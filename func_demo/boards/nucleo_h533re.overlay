@@ -1,0 +1,63 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/ {
+	aliases {
+		custom-uart = &usart1;
+        bmp280-i2c = &i2c1;
+        custom-spi = &spi1;
+	};
+};
+
+&pinctrl {
+    uart1_tx_pa9: uart1_tx_pa9 {
+        pinmux = <STM32_PINMUX('A', 9, AF7)>; 
+    };
+
+    uart1_rx_pa10: uart1_rx_pa10 {
+        pinmux = <STM32_PINMUX('A', 10, AF7)>; 
+    };
+
+    i2c1_sda_pb7: i2c1_sda_pb7 {
+        pinmux = <STM32_PINMUX('B', 7, AF4)>;
+        drive-open-drain;
+        bias-pull-up;
+	};
+
+    i2c1_scl_pb6: i2c1_scl_pb6 {
+        pinmux = <STM32_PINMUX('B', 6, AF4)>;
+        drive-open-drain;
+        bias-pull-up;
+	};
+};
+
+&usart1 {
+    pinctrl-0 = <&uart1_tx_pa9 &uart1_rx_pa10>;
+    current-speed = <115200>;
+    dmas = <&gpdma1 0 22 STM32_DMA_PERIPH_TX>,
+            <&gpdma1 1 21 STM32_DMA_PERIPH_RX>;
+    dma-names = "tx", "rx";
+    status = "okay";
+};
+
+&i2c1 {
+    pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
+    pinctrl-names = "default";
+    clock-frequency = <I2C_BITRATE_STANDARD>;
+    status = "okay";
+
+    // bmp280_sensor: bmp280_sensor@77 {
+	// 	compatible = "bosch,bmp280";
+	// 	reg = <0x77>;
+	// 	status = "okay";
+	// };
+};
+
+&spi1 {
+    status = "disabled";
+};
+
+
+&gpdma1 {
+	status = "okay";
+};
+
