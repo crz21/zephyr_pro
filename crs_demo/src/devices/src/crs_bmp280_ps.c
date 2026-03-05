@@ -47,4 +47,6 @@ void bmp280_ps_thread(void)
         k_mutex_unlock(&i2c_mutex);
     }
 }
+
+K_THREAD_DEFINE(bmp280_ps_thread_id, 1024, bmp280_ps_thread, NULL, NULL, NULL, BMP280_PS_PRIORITY, 0, 0);
 #endif

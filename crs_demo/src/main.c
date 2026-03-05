@@ -2,17 +2,13 @@
 
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
+#include <zephyr/linker/linker-defs.h>
 #include <zephyr/logging/log.h>
 
-#define HRBO_PRIORITY (3)
-#define AHT20_TS_PRIORITY (5)
-#define BMP280_PS_PRIORITY (5)
-#define BLINK0_PRIORITY (5)
-#define LD2410C_DDRS_PRIORITY (6)
-#define DEBUG_UART_PRIORITY (8)
-#define PRODUCER_PRIORITY (4)
-#define BLE_PRIORITY (5)
-#define AS201_IMU_PRIORITY (6)
+// #include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
+// #include <zephyr/mgmt/mcumgr/transport/smp_bt.h>
+// #include <zephyr/mgmt/mcumgr/grp/img_mgmt/img_mgmt.h>
+// #include <zephyr/mgmt/mcumgr/grp/os_mgmt/os_mgmt.h>
 
 #define MSG_QUEUE_SIZE (100)
 
@@ -158,7 +154,16 @@ void create_event_payload(uint8_t* data, uint16_t len, uint32_t event)
 
 int main(void)
 {
+    printk("Address of sample %p\n", (void*)__rom_region_start);
+
     k_mutex_init(&i2c_mutex);
+
+    // // 1. 注册 OS 管理组（用于重启等）
+    // os_mgmt_register_group();
+
+    // // 2. 注册镜像管理组（用于 DFU 固件传输）
+    // img_mgmt_register_group();
+
 
     while (1) {
         k_msleep(1);
@@ -167,32 +172,3 @@ int main(void)
 }
 
 K_THREAD_DEFINE(producer_thread_id, 4096, producer_thread, NULL, NULL, NULL, PRODUCER_PRIORITY, 0, 0);
-K_THREAD_DEFINE(ble_thread_id, 1024, ble_thread, NULL, NULL, NULL, BLE_PRIORITY, 0, 0);
-
-#if defined(CONFIG_HRBO)
-K_THREAD_DEFINE(hrbo_thread_id, 1024, hrbo_thread, NULL, NULL, NULL, HRBO_PRIORITY, 0, 0);
-#endif
-
-#if defined(CONFIG_AHT20_TS)
-K_THREAD_DEFINE(aht20_ts_thread_id, 1024, aht20_ts_thread, NULL, NULL, NULL, AHT20_TS_PRIORITY, 0, 0);
-#endif
-
-#if defined(CONFIG_AS201_IMU)
-K_THREAD_DEFINE(as201_imu_thread_id, 1024, as201_imu_thread, NULL, NULL, NULL, AS201_IMU_PRIORITY, 0, 0);
-#endif
-
-#if defined(CONFIG_BMP280_PS)
-K_THREAD_DEFINE(bmp280_ps_thread_id, 1024, bmp280_ps_thread, NULL, NULL, NULL, BMP280_PS_PRIORITY, 0, 0);
-#endif
-
-#if defined(CONFIG_LD2410C_DDRS)
-K_THREAD_DEFINE(ld2410c_ddrs_thread_id, 1024, ld2410c_ddrs_thread, NULL, NULL, NULL, LD2410C_DDRS_PRIORITY, 0, 0);
-#endif
-
-#if defined(CONFIG_BLINK)
-K_THREAD_DEFINE(blink0_thread_id, 512, blink0_thread, NULL, NULL, NULL, BLINK0_PRIORITY, 0, 0);
-#endif
-
-#if defined(CONFIG_DEBUG_UART)
-K_THREAD_DEFINE(debug_uart_thread_id, 1024, debug_uart_thread, NULL, NULL, NULL, DEBUG_UART_PRIORITY, 0, 0);
-#endif

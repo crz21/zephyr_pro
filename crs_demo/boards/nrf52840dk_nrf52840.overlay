@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: Apache-2.0 */
-#include <dt-bindings/i2c/i2c.h>
 
 / {
 	zephyr,user {
@@ -23,20 +22,12 @@
 		};
 	};
 
-	// custom_uart_default: custom_uart_default {
-	// 	group1 {
-	// 		psels = <NRF_PSEL(UART_TX, 0, 6)>,
-	// 			<NRF_PSEL(UART_RX, 0, 8)>;
-	// 	};
-	// };
-
 	as201_imu_uart_default: as201_imu_uart_default {
 		group1 {
 			psels = <NRF_PSEL(UART_TX, 1, 0)>,
 				<NRF_PSEL(UART_RX, 1, 1)>;
 		};
 	};
-
 };
 
 &i2c0 {
@@ -69,16 +60,8 @@
 	};
 };
 
-// &uart0 {
-// 	status = "okay";
-// 	// pinctrl-0 = <&custom_uart_default>;
-// 	current-speed = <115200>;
-// };
-
 crs_as201_imu_uart: &uart1 {
 	status = "okay";
 	pinctrl-0 = <&as201_imu_uart_default>;
 	current-speed = <115200>;
 };
-
-

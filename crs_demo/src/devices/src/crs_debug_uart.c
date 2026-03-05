@@ -18,4 +18,5 @@ void debug_uart_thread(void)
         k_msleep(10);
     }
 }
+K_THREAD_DEFINE(debug_uart_thread_id, 1024, debug_uart_thread, NULL, NULL, NULL, DEBUG_UART_PRIORITY, 0, 0);
 #endif

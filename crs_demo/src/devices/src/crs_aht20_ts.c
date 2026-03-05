@@ -25,4 +25,6 @@ void aht20_ts_thread(void)
         k_mutex_unlock(&i2c_mutex);
     }
 }
+
+K_THREAD_DEFINE(aht20_ts_thread_id, 1024, aht20_ts_thread, NULL, NULL, NULL, AHT20_TS_PRIORITY, 0, 0);
 #endif

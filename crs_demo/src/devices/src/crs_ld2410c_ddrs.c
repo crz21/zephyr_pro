@@ -19,4 +19,6 @@ void ld2410c_ddrs_thread(void)
         k_msleep(1000);
     }
 }
+
+K_THREAD_DEFINE(ld2410c_ddrs_thread_id, 1024, ld2410c_ddrs_thread, NULL, NULL, NULL, LD2410C_DDRS_PRIORITY, 0, 0);
 #endif

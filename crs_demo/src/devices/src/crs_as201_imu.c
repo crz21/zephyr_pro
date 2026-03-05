@@ -83,5 +83,5 @@ void as201_imu_thread(void)
         }
     }
 }
-
+K_THREAD_DEFINE(as201_imu_thread_id, 1024, as201_imu_thread, NULL, NULL, NULL, AS201_IMU_PRIORITY, 0, 0);
 #endif

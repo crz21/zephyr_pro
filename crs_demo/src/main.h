@@ -76,6 +76,16 @@ enum {
 #define AS201_IMU_EVENT (1 << AS201_IMU_EVENT_NUM)
 #endif
 
+#define HRBO_PRIORITY (3)
+#define AHT20_TS_PRIORITY (5)
+#define BMP280_PS_PRIORITY (5)
+#define BLINK0_PRIORITY (5)
+#define LD2410C_DDRS_PRIORITY (6)
+#define DEBUG_UART_PRIORITY (8)
+#define PRODUCER_PRIORITY (4)
+#define BLE_PRIORITY (5)
+#define AS201_IMU_PRIORITY (6)
+
 void create_event_payload(uint8_t* data, uint16_t len, uint32_t event);
 extern struct k_mutex i2c_mutex;
 #endif

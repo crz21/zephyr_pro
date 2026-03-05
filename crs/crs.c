@@ -61,7 +61,7 @@ static void crmc_ccc_cfg_changed(const struct bt_gatt_attr* attr, uint16_t value
 
     bool notif_enabled = (value == BT_GATT_CCC_NOTIFY);
 
-    LOG_INF("HRS notifications %s", notif_enabled ? "enabled" : "disabled");
+    LOG_INF("CRS notifications %s", notif_enabled ? "enabled" : "disabled");
 
     SYS_SLIST_FOR_EACH_CONTAINER(&crs_cbs, listener, _node)
     {

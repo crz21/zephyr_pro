@@ -66,4 +66,5 @@ void hrbo_thread(void)
         create_event_payload(hrbo_buf, sizeof(hrbo_buf), HRBO_EVENT);
     }
 }
+K_THREAD_DEFINE(hrbo_thread_id, 1024, hrbo_thread, NULL, NULL, NULL, HRBO_PRIORITY, 0, 0);
 #endif

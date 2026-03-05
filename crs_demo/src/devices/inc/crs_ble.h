@@ -4,6 +4,5 @@
 #include <stdint.h>
 
 void crs_notify(uint8_t* data, uint16_t len);
-void ble_thread(void);
 
 #endif
