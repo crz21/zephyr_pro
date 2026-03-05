@@ -52,9 +52,9 @@ static void project_zero_process_application_message(void)
                 tx_buf[2] = buf_len >> 8;
                 tx_buf[3] = (uint8_t)buf_len;
 
-                // for (uint16_t i = 0; i < rev_data->data_len; i++) {
-                //     tx_buf[8 + i] = rev_data->data[i];
-                // }
+                for (uint16_t i = 0; i < rev_data->data_len; i++) {
+                    tx_buf[8 + i] = rev_data->data[i];
+                }
 
                 tx_buf[108] = 0xa5;
                 crs_notify(tx_buf, sizeof(tx_buf));

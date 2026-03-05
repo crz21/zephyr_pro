@@ -14,7 +14,7 @@
 #include <zephyr/logging/log.h>
 
 static bool crf_ntf_enabled;
-// static struct bt_gatt_exchange_params exchange_params;
+
 static const struct bt_data ad[] = {
     BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
     BT_DATA_BYTES(BT_DATA_UUID16_ALL, BT_UUID_16_ENCODE(BT_UUID_CRS_VAL), BT_UUID_16_ENCODE(BT_UUID_BAS_VAL),
@@ -46,12 +46,10 @@ int set_ble_tx_power(uint16_t handle, int8_t dbm)
     struct net_buf *buf, *rsp = NULL;
     int err;
 
-    // 创建供应商特定命令 (Nordic 专用)
-    buf = bt_hci_cmd_create(BT_HCI_OP_VS_WRITE_TX_POWER_LEVEL, sizeof(*cp));
+    buf = bt_hci_cmd_alloc(K_FOREVER);
     if (!buf) {
         return -ENOBUFS;
     }
-
     cp = net_buf_add(buf, sizeof(*cp));
     cp->handle_type = BT_HCI_VS_LL_HANDLE_TYPE_CONN;  // 针对当前连接
     cp->handle = handle;
@@ -82,6 +80,7 @@ void on_le_data_len_updated(struct bt_conn* conn, struct bt_conn_le_data_len_inf
         set_ble_tx_power(handle, 8);
     }
 }
+
 void on_le_phy_updated(struct bt_conn* conn, struct bt_conn_le_phy_info* param)
 {
     printk("LE PHY Updated:Tx 0x%x, Rx 0x%x\n", param->tx_phy, param->rx_phy);
