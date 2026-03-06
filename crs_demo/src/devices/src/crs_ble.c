@@ -66,9 +66,9 @@ int set_ble_tx_power(uint16_t handle, int8_t dbm)
         return -ENOBUFS;
     }
     cp = net_buf_add(buf, sizeof(*cp));
-    cp->handle_type = BT_HCI_VS_LL_HANDLE_TYPE_CONN;  // 针对当前连接
+    cp->handle_type = BT_HCI_VS_LL_HANDLE_TYPE_CONN;  
     cp->handle = handle;
-    cp->tx_power_level = dbm;  // 目标功率值，如 0, 4, 8
+    cp->tx_power_level = dbm;  
 
     err = bt_hci_cmd_send_sync(BT_HCI_OP_VS_WRITE_TX_POWER_LEVEL, buf, &rsp);
     if (err) {

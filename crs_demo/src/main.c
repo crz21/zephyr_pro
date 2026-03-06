@@ -16,7 +16,6 @@
 #include <zephyr/mgmt/mcumgr/grp/stat_mgmt/stat_mgmt.h>
 #endif
 
-
 #define LOG_LEVEL LOG_LEVEL_DBG
 
 LOG_MODULE_REGISTER(smp_sample);
@@ -203,7 +202,6 @@ int main(void)
     k_mutex_init(&i2c_mutex);
 
     while (1) {
-        // k_msleep(1);
         k_sleep(K_MSEC(1000));
         STATS_INC(smp_svr_stats, ticks);
     }
