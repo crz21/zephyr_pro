@@ -6,7 +6,7 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
 project(crs_demo)
 
-test_sysbuild()
+# test_sysbuild()
 
 FILE(GLOB devices_sources src/devices/src/*.c)
 

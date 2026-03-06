@@ -47,7 +47,7 @@ void blink(const struct led* led, uint32_t sleep_ms)
     }
 }
 
-void blink0_thread(void) { blink(&led0, 1000); }
+void blink0_thread(void) { blink(&led0, 200); }
 
 // void blink1_thread(void) { blink(&led1, 200); }
 K_THREAD_DEFINE(blink0_thread_id, 512, blink0_thread, NULL, NULL, NULL, BLINK0_PRIORITY, 0, 0);

@@ -12,9 +12,14 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/mgmt/mcumgr/transport/smp_bt.h>  //dfu
 
+#define LOG_LEVEL LOG_LEVEL_DBG
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(smp_bt_sample);
+
 #include "main.h"
 
 static bool crf_ntf_enabled;
+static struct k_work advertise_work;
 
 static const struct bt_data ad[] = {
     BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
@@ -31,11 +36,23 @@ static const struct bt_data sd[] = {
 enum {
     STATE_CONNECTED,
     STATE_DISCONNECTED,
-
     STATE_BITS,
 };
 
 static ATOMIC_DEFINE(state, STATE_BITS);
+
+static void advertise(struct k_work* work)
+{
+    int rc;
+
+    rc = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
+    if (rc) {
+        LOG_ERR("Advertising failed to start (rc %d)", rc);
+        return;
+    }
+
+    LOG_INF("Advertising successfully started");
+}
 
 int set_ble_tx_power(uint16_t handle, int8_t dbm)
 {
@@ -69,12 +86,11 @@ int set_ble_tx_power(uint16_t handle, int8_t dbm)
 void on_le_data_len_updated(struct bt_conn* conn, struct bt_conn_le_data_len_info* info)
 {
     printk("Step 1 Complete: DLE is now %u. Now starting Step 2: PHY Update...\n", info->tx_max_len);
-    // 获取当前连接的 Handle
+
     uint16_t handle;
     int err = bt_hci_get_conn_handle(conn, &handle);
 
     if (!err) {
-        // 设置为 +8 dBm (最大功率) 或根据需要设置
         set_ble_tx_power(handle, 8);
     }
 }
@@ -94,18 +110,24 @@ static void connected(struct bt_conn* conn, uint8_t err)
 {
     if (err) {
         printk("Connection failed, err 0x%02x %s\n", err, bt_hci_err_to_str(err));
+        k_work_submit(&advertise_work);
     } else {
         printk("Connected\n");
-
         (void)atomic_set_bit(state, STATE_CONNECTED);
     }
 
-    const struct bt_conn_le_phy_param phy_param = {
-        .options = BT_CONN_LE_PHY_OPT_NONE,
-        .pref_rx_phy = BT_GAP_LE_PHY_2M,
-        .pref_tx_phy = BT_GAP_LE_PHY_2M,
+    // const struct bt_conn_le_phy_param phy_param = {
+    //     .options = BT_CONN_LE_PHY_OPT_NONE,
+    //     .pref_rx_phy = BT_GAP_LE_PHY_2M,
+    //     .pref_tx_phy = BT_GAP_LE_PHY_2M,
+    // };
+    // bt_conn_le_phy_update(conn, &phy_param);
+
+    struct bt_conn_le_data_len_param data_len_param = {
+        .tx_max_len = 251,
+        .tx_max_time = 17040,
     };
-    bt_conn_le_phy_update(conn, &phy_param);
+    bt_conn_le_data_len_update(conn, &data_len_param);
 }
 
 static void disconnected(struct bt_conn* conn, uint8_t reason)
@@ -115,11 +137,14 @@ static void disconnected(struct bt_conn* conn, uint8_t reason)
     (void)atomic_set_bit(state, STATE_DISCONNECTED);
 }
 
+static void on_conn_recycled(void) { k_work_submit(&advertise_work); }
+
 BT_CONN_CB_DEFINE(conn_callbacks) = {
     .connected = connected,
     .disconnected = disconnected,
     .le_data_len_updated = on_le_data_len_updated,
-    .le_phy_updated = on_le_phy_updated,
+    // .le_phy_updated = on_le_phy_updated,
+    .recycled = on_conn_recycled,
 };
 
 static void disconnect_option(void)
@@ -147,18 +172,18 @@ static struct bt_crs_cb crs_cb = {
     .ntf_changed = crs_ntf_changed,
 };
 
-static void auth_cancel(struct bt_conn* conn)
-{
-    char addr[BT_ADDR_LE_STR_LEN];
+// static void auth_cancel(struct bt_conn* conn)
+// {
+//     char addr[BT_ADDR_LE_STR_LEN];
 
-    bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+//     bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
-    printk("Pairing cancelled: %s\n", addr);
-}
+//     printk("Pairing cancelled: %s\n", addr);
+// }
 
-static struct bt_conn_auth_cb auth_cb_display = {
-    .cancel = auth_cancel,
-};
+// static struct bt_conn_auth_cb auth_cb_display = {
+//     .cancel = auth_cancel,
+// };
 
 void crs_notify(uint8_t* data, uint16_t len)
 {
@@ -167,11 +192,21 @@ void crs_notify(uint8_t* data, uint16_t len)
     }
 }
 
+static void bt_ready(int err)
+{
+    if (err != 0) {
+        LOG_ERR("Bluetooth failed to initialise: %d", err);
+    } else {
+        k_work_submit(&advertise_work);
+    }
+}
+
 static void crs_ble_init(void)
 {
     int err;
 
-    err = bt_enable(NULL);
+    k_work_init(&advertise_work, advertise);
+    err = bt_enable(bt_ready);
     if (err) {
         printk("Bluetooth init failed (err %d)\n", err);
         return;
@@ -179,15 +214,8 @@ static void crs_ble_init(void)
 
     printk("Bluetooth initialized\n");
 
-    bt_conn_auth_cb_register(&auth_cb_display);
+    // bt_conn_auth_cb_register(&auth_cb_display);
     bt_crs_cb_register(&crs_cb);
-
-    printk("Starting Legacy Advertising (connectable and scannable)\n");
-    err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
-    if (err) {
-        printk("Advertising failed to start (err %d)\n", err);
-        return;
-    }
 }
 
 void ble_thread(void)
