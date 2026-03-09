@@ -6,8 +6,6 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
 project(crs_demo)
 
-# test_sysbuild()
-
 FILE(GLOB devices_sources src/devices/src/*.c)
 
 target_sources(app PRIVATE src/main.c ${devices_sources})

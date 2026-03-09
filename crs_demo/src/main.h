@@ -4,6 +4,7 @@
 #include <zephyr/kernel.h>
 
 #include "devices/inc/crs_ble.h"
+#include "devices/inc/crs_producer.h"
 
 #if defined(CONFIG_AHT20_TS)
 #include "devices/inc/crs_aht20_ts.h"
@@ -86,6 +87,5 @@ enum {
 #define BLE_PRIORITY (5)
 #define AS201_IMU_PRIORITY (6)
 
-void create_event_payload(uint8_t* data, uint16_t len, uint32_t event);
 extern struct k_mutex i2c_mutex;
 #endif
