@@ -30,27 +30,27 @@ static struct fs_mount_t littlefs_mnt = {
     .type = FS_LITTLEFS, .fs_data = &cstorage, .storage_dev = (void*)STORAGE_PARTITION_ID, .mnt_point = "/lfs1"};
 #endif
 
-/* Define an example stats group; approximates seconds since boot. */
-STATS_SECT_START(smp_svr_stats)
-STATS_SECT_ENTRY(ticks)
-STATS_SECT_END;
+// /* Define an example stats group; approximates seconds since boot. */
+// STATS_SECT_START(smp_svr_stats)
+// STATS_SECT_ENTRY(ticks)
+// STATS_SECT_END;
 
-/* Assign a name to the `ticks` stat. */
-STATS_NAME_START(smp_svr_stats)
-STATS_NAME(smp_svr_stats, ticks)
-STATS_NAME_END(smp_svr_stats);
+// /* Assign a name to the `ticks` stat. */
+// STATS_NAME_START(smp_svr_stats)
+// STATS_NAME(smp_svr_stats, ticks)
+// STATS_NAME_END(smp_svr_stats);
 
-/* Define an instance of the stats group. */
-STATS_SECT_DECL(smp_svr_stats) smp_svr_stats;
+// /* Define an instance of the stats group. */
+// STATS_SECT_DECL(smp_svr_stats) smp_svr_stats;
 
 int main(void)
 {
     printk("Address of sample %p\n", (void*)__rom_region_start);
 
-    int rc = STATS_INIT_AND_REG(smp_svr_stats, STATS_SIZE_32, "smp_svr_stats");
-    if (rc < 0) {
-        LOG_ERR("Error initializing stats system [%d]", rc);
-    }
+    // int rc = STATS_INIT_AND_REG(smp_svr_stats, STATS_SIZE_32, "smp_svr_stats");
+    // if (rc < 0) {
+    //     LOG_ERR("Error initializing stats system [%d]", rc);
+    // }
 
 #ifdef CONFIG_MCUMGR_GRP_FS
     rc = fs_mount(&littlefs_mnt);
@@ -62,8 +62,8 @@ int main(void)
     k_mutex_init(&i2c_mutex);
 
     while (1) {
-        k_sleep(K_MSEC(1000));
-        STATS_INC(smp_svr_stats, ticks);
+        k_sleep(K_MSEC(10));
+        // STATS_INC(smp_svr_stats, ticks);
     }
     return 0;
 }

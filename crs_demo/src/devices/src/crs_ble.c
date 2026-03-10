@@ -116,18 +116,18 @@ static void connected(struct bt_conn* conn, uint8_t err)
         (void)atomic_set_bit(state, STATE_CONNECTED);
     }
 
-    // const struct bt_conn_le_phy_param phy_param = {
-    //     .options = BT_CONN_LE_PHY_OPT_NONE,
-    //     .pref_rx_phy = BT_GAP_LE_PHY_2M,
-    //     .pref_tx_phy = BT_GAP_LE_PHY_2M,
-    // };
-    // bt_conn_le_phy_update(conn, &phy_param);
-
-    struct bt_conn_le_data_len_param data_len_param = {
-        .tx_max_len = 251,
-        .tx_max_time = 17040,
+    const struct bt_conn_le_phy_param phy_param = {
+        .options = BT_CONN_LE_PHY_OPT_NONE,
+        .pref_rx_phy = BT_GAP_LE_PHY_2M,
+        .pref_tx_phy = BT_GAP_LE_PHY_2M,
     };
-    bt_conn_le_data_len_update(conn, &data_len_param);
+    bt_conn_le_phy_update(conn, &phy_param);
+
+    // struct bt_conn_le_data_len_param data_len_param = {
+    //     .tx_max_len = 251,
+    //     .tx_max_time = 17040,
+    // };
+    // bt_conn_le_data_len_update(conn, &data_len_param);
 }
 
 static void disconnected(struct bt_conn* conn, uint8_t reason)
@@ -143,7 +143,7 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
     .connected = connected,
     .disconnected = disconnected,
     .le_data_len_updated = on_le_data_len_updated,
-    // .le_phy_updated = on_le_phy_updated,
+    .le_phy_updated = on_le_phy_updated,
     .recycled = on_conn_recycled,
 };
 
