@@ -1,0 +1,17 @@
+# dts/bindings/vnd_uart.yaml
+description: Vendor Virtual Sensor/UART for RTIO demo
+
+compatible: "vnd_uart"
+
+include: base.yaml
+
+properties:
+  sample_period:
+    type: int
+    required: true
+    description: Time between simulated data events in milliseconds.
+
+  sample_size:
+    type: int
+    required: true
+    description: Size of each data packet in bytes.
