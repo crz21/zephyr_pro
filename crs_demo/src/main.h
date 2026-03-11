@@ -86,6 +86,7 @@ enum {
 #define PRODUCER_PRIORITY (4)
 #define BLE_PRIORITY (5)
 #define AS201_IMU_PRIORITY (6)
+#define OPENTHREAD_PRIORITY (5)
 
 extern struct k_mutex i2c_mutex;
 #endif

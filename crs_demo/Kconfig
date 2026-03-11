@@ -1,4 +1,17 @@
-source "Kconfig.zephyr"
+mainmenu "CRS DEMO"
+
+menu "Application configuration"
+
+config OT_COAP_SAMPLE_SERVER
+	bool "Build the sample CoAP server application"
+
+# config OT_COAP_SAMPLE_LED
+# 	bool "Enable LED support"
+# 	default y
+
+# config OT_COAP_SAMPLE_SW
+# 	bool "Enable switch support"
+# 	default y
 
 config AS201_IMU
     bool "Enable AS201 IMU Support"
@@ -41,3 +54,19 @@ config DEBUG_UART
     default n
     help 
       This option enables the custom DEBUG UART driver logic.
+
+config RTIO_UART
+    bool "Enable RTIO UART Support"
+    default n
+    help 
+      This option enables the custom RTIO UART driver logic.
+
+config OPEN_THREAD
+    bool "Enable OPEN THREAD Support"
+    default n
+    help 
+      This option enables the custom OPEN THREAD driver logic.
+
+endmenu
+
+source "Kconfig.zephyr"

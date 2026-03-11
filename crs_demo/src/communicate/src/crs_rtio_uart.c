@@ -1,3 +1,4 @@
+#if defined(CONFIG_RTIO_UART)
 #include <zephyr/kernel.h>
 #include <zephyr/rtio/rtio.h>
 #include <zephyr/logging/log.h>
@@ -56,3 +57,4 @@ int main(void)
     }
     return 0;
 }
+#endif

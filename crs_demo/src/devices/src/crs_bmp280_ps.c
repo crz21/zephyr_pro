@@ -40,11 +40,11 @@ void bmp280_ps_thread(void)
     }
 
     for (;;) {
-        k_mutex_lock(&i2c_mutex, K_FOREVER);
+        // k_mutex_lock(&i2c_mutex, K_FOREVER);
         // bmp280_data_buf[0] = 0xD0;
         // i2c_write_read_dt(&bmp280_spec, &bmp280_data_buf[0], 1, &bmp280_data_buf[1], 1);
-        create_event_payload(bmp280_data_buf, sizeof(bmp280_data_buf), BMP280_PS_EVENT);
-        k_mutex_unlock(&i2c_mutex);
+        // create_event_payload(bmp280_data_buf, sizeof(bmp280_data_buf), BMP280_PS_EVENT);
+        // k_mutex_unlock(&i2c_mutex);
     }
 }
 

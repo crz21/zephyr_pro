@@ -1,3 +1,4 @@
+#if defined(CONFIG_RTIO_UART)
 #define DT_DRV_COMPAT vnd_uart
 
 #include <zephyr/kernel.h>
@@ -66,3 +67,5 @@ static int vnd_uart_init(const struct device *dev)
                           POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(VND_UART_INIT)
+
+#endif
