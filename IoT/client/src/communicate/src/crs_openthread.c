@@ -1,4 +1,4 @@
-#ifdef(CONFIG_OPENTHREAD_CRS)
+#ifdef(CONFIG_OPENTHREAD_IOT)
 
 #include <coap_utils.h>
 #include <zephyr/device.h>

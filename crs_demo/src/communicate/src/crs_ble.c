@@ -4,7 +4,7 @@
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/hci_vs.h>
 #include <zephyr/bluetooth/services/bas.h>
-#include <zephyr/bluetooth/services/crs.h>
+#include <zephyr/bluetooth/services/iot.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
@@ -66,9 +66,9 @@ int set_ble_tx_power(uint16_t handle, int8_t dbm)
         return -ENOBUFS;
     }
     cp = net_buf_add(buf, sizeof(*cp));
-    cp->handle_type = BT_HCI_VS_LL_HANDLE_TYPE_CONN;  
+    cp->handle_type = BT_HCI_VS_LL_HANDLE_TYPE_CONN;
     cp->handle = handle;
-    cp->tx_power_level = dbm;  
+    cp->tx_power_level = dbm;
 
     err = bt_hci_cmd_send_sync(BT_HCI_OP_VS_WRITE_TX_POWER_LEVEL, buf, &rsp);
     if (err) {

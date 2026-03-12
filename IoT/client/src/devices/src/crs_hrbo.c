@@ -51,14 +51,14 @@ void hrbo_thread(void)
         return;
     }
 
-    // crs_i2c_read(hrbo_spec,REG_PART_ID, &hrbo_id);
+    // iot_i2c_read(hrbo_spec,REG_PART_ID, &hrbo_id);
     // if (hrbo_id == 0x36) {
     // }
     // k_msleep(1000);
 
     for (;;) {
         // hrbo_id = 0x36;
-        // crs_i2c_read(hrbo_spec,REG_PART_ID, &hrbo_id);
+        // iot_i2c_read(hrbo_spec,REG_PART_ID, &hrbo_id);
         k_msleep(20);
         test_cnt++;
         hrbo_buf[0] = test_cnt >> 8;

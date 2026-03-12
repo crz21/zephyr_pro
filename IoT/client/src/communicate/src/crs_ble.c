@@ -4,7 +4,7 @@
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/hci_vs.h>
 #include <zephyr/bluetooth/services/bas.h>
-#include <zephyr/bluetooth/services/crs.h>
+#include <zephyr/bluetooth/services/iot.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
@@ -23,7 +23,7 @@ static struct k_work advertise_work;
 
 static const struct bt_data ad[] = {
     BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
-    BT_DATA_BYTES(BT_DATA_UUID16_ALL, BT_UUID_16_ENCODE(BT_UUID_CRS_VAL), BT_UUID_16_ENCODE(BT_UUID_BAS_VAL),
+    BT_DATA_BYTES(BT_DATA_UUID16_ALL, BT_UUID_16_ENCODE(BT_UUID_IOT_VAL), BT_UUID_16_ENCODE(BT_UUID_BAS_VAL),
                   BT_UUID_16_ENCODE(BT_UUID_DIS_VAL)),
     BT_DATA_BYTES(BT_DATA_UUID128_ALL, SMP_BT_SVC_UUID_VAL),
 
@@ -66,9 +66,9 @@ int set_ble_tx_power(uint16_t handle, int8_t dbm)
         return -ENOBUFS;
     }
     cp = net_buf_add(buf, sizeof(*cp));
-    cp->handle_type = BT_HCI_VS_LL_HANDLE_TYPE_CONN;  
+    cp->handle_type = BT_HCI_VS_LL_HANDLE_TYPE_CONN;
     cp->handle = handle;
-    cp->tx_power_level = dbm;  
+    cp->tx_power_level = dbm;
 
     err = bt_hci_cmd_send_sync(BT_HCI_OP_VS_WRITE_TX_POWER_LEVEL, buf, &rsp);
     if (err) {
@@ -161,15 +161,15 @@ static void disconnect_option(void)
     }
 }
 
-static void crs_ntf_changed(bool enabled)
+static void iot_ntf_changed(bool enabled)
 {
     crf_ntf_enabled = enabled;
 
-    printk("CRS notification status changed: %s\n", enabled ? "enabled" : "disabled");
+    printk("IOT notification status changed: %s\n", enabled ? "enabled" : "disabled");
 }
 
-static struct bt_crs_cb crs_cb = {
-    .ntf_changed = crs_ntf_changed,
+static struct bt_iot_cb iot_cb = {
+    .ntf_changed = iot_ntf_changed,
 };
 
 // static void auth_cancel(struct bt_conn* conn)
@@ -185,10 +185,10 @@ static struct bt_crs_cb crs_cb = {
 //     .cancel = auth_cancel,
 // };
 
-void crs_notify(uint8_t* data, uint16_t len)
+void iot_notify(uint8_t* data, uint16_t len)
 {
     if (crf_ntf_enabled) {
-        bt_crs_notify(data, len);
+        bt_iot_notify(data, len);
     }
 }
 
@@ -201,7 +201,7 @@ static void bt_ready(int err)
     }
 }
 
-static void crs_ble_init(void)
+static void iot_ble_init(void)
 {
     int err;
 
@@ -215,12 +215,12 @@ static void crs_ble_init(void)
     printk("Bluetooth initialized\n");
 
     // bt_conn_auth_cb_register(&auth_cb_display);
-    bt_crs_cb_register(&crs_cb);
+    bt_iot_cb_register(&iot_cb);
 }
 
 void ble_thread(void)
 {
-    crs_ble_init();
+    iot_ble_init();
 
     for (;;) {
         disconnect_option();

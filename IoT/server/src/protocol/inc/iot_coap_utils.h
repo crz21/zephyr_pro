@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef COAP_UTILS_H
-#define COAP_UTILS_H
-
+#ifndef __IOT_COAP_UTILS_H__
+#define __IOT_COAP_UTILS_H__
+#ifdef CONFIG_OPEN_THREAD
 #include <zephyr/net/openthread.h>
 #include <openthread/coap.h>
 
@@ -26,5 +26,5 @@ int coap_get_req_send(const char *addr, const char *uri, uint8_t *buf, int len,
 		      otCoapResponseHandler handler, void *ctx);
 const char *coap_device_id(void);
 int coap_get_data(otMessage *msg, void *buf, int *len);
-
+#endif
 #endif /* COAP_UTILS_H */

@@ -1,4 +1,4 @@
-#ifdef(CONFIG_AS201_IMU)
+#ifdef CONFIG_AS201_IMU
 #include <zephyr/device.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/kernel.h>

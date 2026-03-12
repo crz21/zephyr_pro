@@ -3,13 +3,12 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
+#ifdef CONFIG_OPEN_THREAD
  #include <zephyr/drivers/gpio.h>
- #include <zephyr/logging/log.h>
- LOG_MODULE_DECLARE(coap);
+//  #include <zephyr/logging/log.h>
+//  LOG_MODULE_DECLARE(coap);
  
- #include "coap_utils.h"
- #include "button.h"
+ #include "main.h"
  
  struct btn_rsc_data {
      const struct gpio_dt_spec gpio;
@@ -89,7 +88,7 @@
      struct btn_rsc_ctx *btn_ctx = rsc->mContext;
      const struct gpio_dt_spec *gpio;
  
-     LOG_INF("Initializing the buttons");
+    //  LOG_INF("Initializing the buttons");
      for (int i = 0; i < btn_ctx->count; i++) {
          gpio = &btn_ctx->btn[i].gpio;
          ret = button_init(gpio);
@@ -106,7 +105,7 @@
      otInstance *ot = openthread_get_default_instance();
  
      button_init_rsc(&btn_rsc);
-     LOG_INF("Registering button rsc");
+    //  LOG_INF("Registering button rsc");
      otCoapAddResource(ot, &btn_rsc);
  }
  #endif /* CONFIG_OT_COAP_SAMPLE_SERVER */
@@ -116,21 +115,21 @@
      int ret;
  
      if (!gpio_is_ready_dt(gpio)) {
-         LOG_ERR("Error: button device %s is not ready\n", gpio->port->name);
+        //  LOG_ERR("Error: button device %s is not ready\n", gpio->port->name);
          return -ENODEV;
      }
  
      ret = gpio_pin_configure_dt(gpio, GPIO_INPUT);
      if (ret != 0) {
-         LOG_ERR("Error %d: failed to configure %s pin %d\n", ret, gpio->port->name,
-             gpio->pin);
+        //  LOG_ERR("Error %d: failed to configure %s pin %d\n", ret, gpio->port->name,
+            //  gpio->pin);
          return ret;
      }
  
      ret = gpio_pin_interrupt_configure_dt(gpio, GPIO_INT_EDGE_TO_ACTIVE);
      if (ret != 0) {
-         LOG_ERR("Error %d: failed to configure interrupt on %s pin %d\n", ret,
-             gpio->port->name, gpio->pin);
+        //  LOG_ERR("Error %d: failed to configure interrupt on %s pin %d\n", ret,
+            //  gpio->port->name, gpio->pin);
          return ret;
      }
  
@@ -178,4 +177,4 @@
      *state = btn.btns[btn_id].state;
      return ret;
  }
- 
+ #endif

@@ -1,10 +1,26 @@
-#ifdef(CONFIG_OPENTHREAD_CRS)
-
-#include <coap_utils.h>
+#ifdef CONFIG_OPEN_THREAD
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 
 #include "main.h"
+#ifdef CONFIG_OT_COAP_SAMPLE_SW
+#include <zephyr/drivers/gpio.h>
+
+/*
+ * Get button configuration from the devicetree sw0 alias. This is mandatory.
+ */
+#define SW0_NODE DT_ALIAS(sw0)
+#if !DT_NODE_HAS_STATUS_OKAY(SW0_NODE)
+#error "Unsupported board: sw0 devicetree alias is not defined"
+#endif
+static const struct gpio_dt_spec button = GPIO_DT_SPEC_GET_OR(SW0_NODE, gpios, {0});
+static struct gpio_callback button_cb_data;
+
+void button_pressed(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
+{
+	coap_led_set_state("ff03::1", 0, LED_MSG_STATE_TOGGLE);
+}
+#endif /* CONFIG_OT_COAP_SAMPLE_SW */
 
 void openthread_thread(void)
 {
@@ -20,7 +36,7 @@ void openthread_thread(void)
 
     ret = coap_init();
     if (ret) {
-        return ret;
+        return;
     }
 
 #ifdef CONFIG_OT_COAP_SAMPLE_SW

@@ -2,7 +2,7 @@
 
 / {
 	zephyr,user {
-		as201-imu-uart = <&crs_as201_imu_uart>;
+		as201-imu-uart = <&iot_as201_imu_uart>;
 	};
 	
 	aliases {
@@ -64,7 +64,7 @@
 	};
 };
 
-crs_as201_imu_uart: &uart1 {
+iot_as201_imu_uart: &uart1 {
 	status = "okay";
 	pinctrl-0 = <&as201_imu_uart_default>;
 	current-speed = <115200>;

@@ -67,7 +67,7 @@ static void project_zero_process_application_message(void)
                 }
 
                 tx_buf[108] = 0xa5;
-                crs_notify(tx_buf, sizeof(tx_buf));
+                iot_notify(tx_buf, sizeof(tx_buf));
                 break;
 #endif
 

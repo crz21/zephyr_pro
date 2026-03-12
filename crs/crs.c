@@ -15,7 +15,7 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/hci.h>
-#include <zephyr/bluetooth/services/crs.h>
+#include <zephyr/bluetooth/services/iot.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
@@ -24,7 +24,7 @@
 
 #define LOG_LEVEL CONFIG_BT_CRS_LOG_LEVEL
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(crs);
+LOG_MODULE_REGISTER(iot);
 
 #define GATT_PERM_READ_MASK (BT_GATT_PERM_READ | BT_GATT_PERM_READ_ENCRYPT | BT_GATT_PERM_READ_AUTHEN)
 #define GATT_PERM_WRITE_MASK (BT_GATT_PERM_WRITE | BT_GATT_PERM_WRITE_ENCRYPT | BT_GATT_PERM_WRITE_AUTHEN)
