@@ -1,4 +1,4 @@
-#if defined(CONFIG_CUSTOM_UART)
+#ifdef(CONFIG_CUSTOM_UART)
 #include <stdint.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/uart.h>

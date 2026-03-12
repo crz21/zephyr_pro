@@ -1,4 +1,4 @@
-#if defined(CONFIG_BMP280_PS)
+#ifdef(CONFIG_BMP280_PS)
 #include <stdint.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/kernel.h>
@@ -24,7 +24,7 @@ const struct device* bmp280_i2c_dev = DEVICE_DT_GET(I2C_DEV_NODE);
 void func_bmp280_ps_thread(void)
 {
     uint8_t bmp280_data_buf[2] = {0};
- 
+
     if (!device_is_ready(bmp280_i2c_dev)) {
         return;
     }

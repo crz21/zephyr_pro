@@ -1,4 +1,4 @@
-#if defined(CONFIG_CUSTOM_BLINKY)
+#ifdef(CONFIG_CUSTOM_BLINKY)
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/kernel.h>
 

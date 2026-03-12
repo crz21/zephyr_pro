@@ -1,4 +1,4 @@
-#if defined(CONFIG_CUSTOM_SPI)
+#ifdef(CONFIG_CUSTOM_SPI)
 #include <stdint.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/spi.h>
@@ -16,7 +16,6 @@ void custom_spi_thread(void)
     }
 
     for (;;) {
-
     }
 }
 
