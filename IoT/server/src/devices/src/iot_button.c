@@ -5,8 +5,8 @@
  */
 #ifdef CONFIG_OPEN_THREAD
  #include <zephyr/drivers/gpio.h>
-//  #include <zephyr/logging/log.h>
-//  LOG_MODULE_DECLARE(coap);
+ #include <zephyr/logging/log.h>
+ LOG_MODULE_DECLARE(coap);
  
  #include "main.h"
  

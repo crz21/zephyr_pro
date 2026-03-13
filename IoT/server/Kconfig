@@ -13,7 +13,7 @@ config OT_COAP_SAMPLE_SW
 	bool "Enable switch support"
 	default y
 
-config OT_COAP_SHELL
+config BT_CRS
 	bool "Enable switch support"
 	default n
 
@@ -40,18 +40,6 @@ config BMP280_PS
     default n
     help 
       This option enables the custom BMP280 pressure sensor driver logic.
-
-config LED_CT
-    bool "Enable BLINK Support"
-    default n
-    help 
-      This option enables the custom BLINK driver logic.
-
-config BUTTON_CT
-    bool "Enable BUTTON Support"
-    default n
-    help 
-      This option enables the custom BLINK driver logic.
 
 config OPEN_THREAD
     bool "Enable OPEN THREAD Support"

@@ -1,4 +1,4 @@
-#ifdef(CONFIG_LD2410C_DDR)
+#ifdef CONFIG_LD2410C_DDR
 #include <zephyr/drivers/uart.h>
 #include <zephyr/kernel.h>
 

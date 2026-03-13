@@ -1,4 +1,4 @@
-#ifdef(CONFIG_BMP280_PS)
+#ifdef CONFIG_BMP280_PS
 #include <stdint.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/kernel.h>

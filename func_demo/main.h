@@ -9,7 +9,7 @@
 #include "devices/inc/func_uart.h"
 #endif
 
-#ifdef(CONFIG_BMP280_PS)
+#ifdef CONFIG_BMP280_PS
 #include "devices/inc/func_bmp280_ps.h"
 #endif
 

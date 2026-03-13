@@ -16,8 +16,6 @@
 #include <zephyr/mgmt/mcumgr/grp/stat_mgmt/stat_mgmt.h>
 #endif
 
-LOG_MODULE_REGISTER(smp_sample);
-
 struct k_mutex i2c_mutex;
 
 #ifdef CONFIG_MCUMGR_GRP_FS
@@ -45,8 +43,6 @@ STATS_SECT_DECL(smp_svr_stats) smp_svr_stats;
 
 int main(void)
 {
-    printk("Address of sample %p\n", (void*)__rom_region_start);
-
 #ifdef CONFIG_MCUMGR_GRP_STAT
     int rc = STATS_INIT_AND_REG(smp_svr_stats, STATS_SIZE_32, "smp_svr_stats");
     if (rc < 0) {

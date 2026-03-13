@@ -1,4 +1,4 @@
-#ifdef(CONFIG_HRBO)
+#ifdef CONFIG_HRBO
 #include <stdint.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/kernel.h>

@@ -6,15 +6,15 @@
 #include "devices/inc/iot_producer.h"
 
 enum {
-#ifdef(CONFIG_AHT20_TS)
+#ifdef CONFIG_AHT20_TS
     AHT20_TS_EVENT_NUM,
 #endif
 
-#ifdef(CONFIG_BMP280_PS)
+#ifdef CONFIG_BMP280_PS
     BMP280_PS_EVENT_NUM,
 #endif
 
-#ifdef(CONFIG_HRBO)
+#ifdef CONFIG_HRBO
     HRBO_EVENT_NUM,
 #endif
 
@@ -22,7 +22,7 @@ enum {
     LD2410C_DDRS_EVENT_NUM,
 #endif
 
-#ifdef(CONFIG_AS201_IMU)
+#ifdef CONFIG_AS201_IMU
     AS201_IMU_EVENT_NUM,
 #endif
     MAX_EVENT_NUM
@@ -38,29 +38,29 @@ enum {
 #define OPENTHREAD_PRIORITY (5)
 #endif
 
-#ifdef(CONFIG_DEBUG_UART)
+#ifdef CONFIG_DEBUG_UART
 #include "communicate/inc/iot_debug_uart.h"
 #define DEBUG_UART_PRIORITY (8)
 #endif
 
-#ifdef(CONFIG_BLINK)
+#ifdef CONFIG_BLINK
 #include "devices/inc/iot_blink.h"
 #define BLINK0_PRIORITY (5)
 #endif
 
-#ifdef(CONFIG_AHT20_TS)
+#ifdef CONFIG_AHT20_TS
 #include "devices/inc/iot_aht20_ts.h"
 #define AHT20_TS_EVENT (1 << AHT20_TS_EVENT_NUM)
 #define AHT20_TS_PRIORITY (5)
 #endif
 
-#ifdef(CONFIG_BMP280_PS)
+#ifdef CONFIG_BMP280_PS
 #include "devices/inc/iot_bmp280_ps.h"
 #define BMP280_PS_EVENT (1 << BMP280_PS_EVENT_NUM)
 #define BMP280_PS_PRIORITY (5)
 #endif
 
-#ifdef(CONFIG_HRBO)
+#ifdef CONFIG_HRBO
 #include "devices/inc/iot_hrbo.h"
 #define HRBO_EVENT (1 << HRBO_EVENT_NUM)
 #define HRBO_PRIORITY (3)
@@ -72,7 +72,7 @@ enum {
 #define LD2410C_DDRS_PRIORITY (6)
 #endif
 
-#ifdef(CONFIG_AS201_IMU)
+#ifdef CONFIG_AS201_IMU
 #include "devices/inc/iot_as201_imu.h"
 #define AS201_IMU_EVENT (1 << AS201_IMU_EVENT_NUM)
 #define AS201_IMU_PRIORITY (6)

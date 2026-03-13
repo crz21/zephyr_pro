@@ -54,7 +54,7 @@ static void project_zero_process_application_message(void)
             p_characteristic_data_t* rev_data = (p_characteristic_data_t*)rev_msg->p_data;
 
             switch (rev_msg->event) {
-#ifdef(CONFIG_HRBO)
+#ifdef CONFIG_HRBO
             case HRBO_EVENT:
                 tx_buf[0] = 0x55;
                 tx_buf[1] = 0xaa;
@@ -71,21 +71,21 @@ static void project_zero_process_application_message(void)
                 break;
 #endif
 
-#ifdef(CONFIG_AHT20_TS)
+#ifdef CONFIG_AHT20_TS
             case AHT20_TS_EVENT:
                 tx_buf[4] = rev_data->data[0];
                 tx_buf[5] = rev_data->data[1];
                 break;
 #endif
 
-#ifdef(CONFIG_BMP280_PS)
+#ifdef CONFIG_BMP280_PS
             case BMP280_PS_EVENT:
                 tx_buf[6] = rev_data->data[0];
                 tx_buf[7] = rev_data->data[1];
                 break;
 #endif
 
-#ifdef(CONFIG_AS201_IMU)
+#ifdef CONFIG_AS201_IMU
             case AS201_IMU_EVENT:
                 for (uint16_t i = 0; i < rev_data->data_len; i++) {
                     tx_buf[8 + i] = rev_data->data[i];
@@ -111,23 +111,23 @@ static void producer_thread(void* rec, void* p2, void* p3)
     for (;;) {
         uint32_t event_bits = k_event_wait(&g_event_group,
                                            0
-#ifdef(CONFIG_AHT20_TS)
+#ifdef CONFIG_AHT20_TS
                                                | AHT20_TS_EVENT
 #endif
 
-#ifdef(CONFIG_BMP280_PS)
+#ifdef CONFIG_BMP280_PS
                                                | BMP280_PS_EVENT
 #endif
 
-#ifdef(CONFIG_HRBO)
+#ifdef CONFIG_HRBO
                                                | HRBO_EVENT
 #endif
 
-#ifdef(CONFIG_LD2410C_DDRS)
+#ifdef CONFIG_LD2410C_DDRS
                                                | LD2410C_DDRS_EVENT
 #endif
 
-#ifdef(CONFIG_AS201_IMU)
+#ifdef CONFIG_AS201_IMU
                                                | AS201_IMU_EVENT
 #endif
                                            ,

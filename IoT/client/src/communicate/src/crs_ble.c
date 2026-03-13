@@ -4,7 +4,7 @@
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/hci_vs.h>
 #include <zephyr/bluetooth/services/bas.h>
-#include <zephyr/bluetooth/services/iot.h>
+#include <zephyr/bluetooth/services/crs.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>

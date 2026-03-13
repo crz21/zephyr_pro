@@ -1,21 +1,21 @@
+common:
+  harness: net
+  tags:
+    - net
+    - openthread
+  depends_on: openthread
+  min_flash: 140
 sample:
-  description: A basic demo to showcase multi-threading using K_THREAD_DEFINE
-  name: Basic Thread Demo
+  description: Runs the OpenThread stack as FTD with CoAP
+  name: OpenThread FTD CoAP
 tests:
-  sample.basic.threads:
-    tags:
-      - kernel
-      - threads
-      - gpio
-    filter: dt_enabled_alias_with_parent_compat("led0", "gpio-leds") and
-            dt_enabled_alias_with_parent_compat("led1", "gpio-leds")
-    integration_platforms:
-      - nrf52833dk/nrf52820
-    depends_on: gpio
-    harness: console
-    harness_config:
-      type: multi_line
-      ordered: false
-      regex:
-        - "Toggled led0; counter=(.*)"
-        - "Toggled led1; counter=(.*)"
+  sample.net.openthread.ftd.coap.client:
+    build_only: true
+    platform_allow:
+      - cc1352p7_lp
+  sample.net.openthread.ftd.coap.server:
+    build_only: true
+    platform_allow:
+      - cc1352p7_lp
+    extra_configs:
+      - CONFIG_OT_COAP_SAMPLE_SERVER=y

@@ -1,15 +1,6 @@
 #ifndef __MAIN_H__
 #define __MAIN_H__
 
-#include <zephyr/kernel.h>
-
-#include "protocol/inc/iot_producer.h"
-#ifdef CONFIG_OPEN_THREAD
-#include "protocol/inc/iot_coap_utils.h"
-
-#include "devices/inc/iot_led.h"
-#include "devices/inc/iot_button.h"
-#endif
 enum {
 #ifdef CONFIG_AHT20_TS
     AHT20_TS_EVENT_NUM,
@@ -24,14 +15,18 @@ enum {
 #endif
     MAX_EVENT_NUM
 };
+#include <zephyr/kernel.h>
 
+#include "protocol/inc/iot_producer.h"
 #ifdef CONFIG_BT_CRS
 #include "communicate/inc/iot_ble.h"
 #define BLE_PRIORITY (5)
 #endif
-
-#ifdef CONFIG_OPENTHREAD_IOT
-#include "communicate/inc/iot_as201_imu.h"
+#ifdef CONFIG_OPEN_THREAD
+#include "communicate/inc/iot_openthread.h"
+#include "devices/inc/iot_button.h"
+#include "devices/inc/iot_led.h"
+#include "protocol/inc/iot_coap_utils.h"
 #define OPENTHREAD_PRIORITY (5)
 #endif
 
@@ -59,7 +54,7 @@ enum {
 #endif
 
 #define PRODUCER_PRIORITY (4)
-#define OPENTHREAD_PRIORITY (4)
+
 extern struct k_mutex i2c_mutex;
 
 #endif

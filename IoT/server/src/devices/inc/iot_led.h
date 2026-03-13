@@ -1,6 +1,6 @@
 #ifndef __IOT_COAP_BLINK_H__
 #define __IOT_COAP_BLINK_H__
-
+#ifdef CONFIG_OPEN_THREAD
 #include <zephyr/data/json.h>
 
 #define LED_URI "led"
@@ -28,4 +28,5 @@ int coap_led_get_state(const char *addr, int led_id, int *state);
 #ifdef CONFIG_OT_COAP_SAMPLE_SERVER
 void coap_led_reg_rsc(void);
 #endif /* CONFIG_OT_COAP_SAMPLE_SERVER */
+#endif
 #endif

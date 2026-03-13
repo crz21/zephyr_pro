@@ -1,6 +1,6 @@
 #ifndef __IOT_COAP_BUTTON_H__
 #define __IOT_COAP_BUTTON_H__
-
+#ifdef CONFIG_OPEN_THREAD
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/data/json.h>
 
@@ -27,5 +27,6 @@ int coap_btn_get_state(const char *addr, int led_id, int *state);
 
 #ifdef CONFIG_OT_COAP_SAMPLE_SERVER
 void coap_btn_reg_rsc(void);
+#endif
 #endif
 #endif

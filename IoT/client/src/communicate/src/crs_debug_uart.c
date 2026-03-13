@@ -1,4 +1,4 @@
-#ifdef(CONFIG_DEBUG_UART)
+#ifdef CONFIG_DEBUG_UART
 #include <zephyr/drivers/uart.h>
 #include <zephyr/kernel.h>
 

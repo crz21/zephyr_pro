@@ -47,29 +47,31 @@ static void project_zero_process_application_message(void)
 {
     p_msg_t* rev_msg = NULL;
     static uint8_t tx_buf[109] = {0};
-    // uint16_t buf_len = 0;
+    uint16_t buf_len = 0;
 
     if (k_msgq_get(&g_msg_queue, &rev_msg, K_FOREVER) == 0) {
         if (rev_msg != NULL) {
             p_characteristic_data_t* rev_data = (p_characteristic_data_t*)rev_msg->p_data;
 
             switch (rev_msg->event) {
-// #ifdef(CONFIG_HRBO
-//             case HRBO_EVENT:
-//                 tx_buf[0] = 0x55;
-//                 tx_buf[1] = 0xaa;
-//                 buf_len = sizeof(tx_buf) - 4;
-//                 tx_buf[2] = buf_len >> 8;
-//                 tx_buf[3] = (uint8_t)buf_len;
+#ifdef CONFIG_HRBO
+            case HRBO_EVENT:
+                tx_buf[0] = 0x55;
+                tx_buf[1] = 0xaa;
+                buf_len = sizeof(tx_buf) - 4;
+                tx_buf[2] = buf_len >> 8;
+                tx_buf[3] = (uint8_t)buf_len;
 
-//                 for (uint16_t i = 0; i < rev_data->data_len; i++) {
-//                     tx_buf[8 + i] = rev_data->data[i];
-//                 }
+                for (uint16_t i = 0; i < rev_data->data_len; i++) {
+                    tx_buf[8 + i] = rev_data->data[i];
+                }
 
-//                 tx_buf[108] = 0xa5;
-//                 iot_notify(tx_buf, sizeof(tx_buf));
-//                 break;
-// #endif
+                tx_buf[108] = 0xa5;
+#ifdef CONFIG_BT_CRS
+                crs_notify(tx_buf, sizeof(tx_buf));
+#endif
+                break;
+#endif
 
 #ifdef CONFIG_AHT20_TS
             case AHT20_TS_EVENT:
@@ -85,13 +87,13 @@ static void project_zero_process_application_message(void)
                 break;
 #endif
 
-// #ifdef(CONFIG_AS201_IMU)
-//             case AS201_IMU_EVENT:
-//                 for (uint16_t i = 0; i < rev_data->data_len; i++) {
-//                     tx_buf[8 + i] = rev_data->data[i];
-//                 }
-//                 break;
-// #endif
+                // #ifdef CONFIG_AS201_IMU
+                //             case AS201_IMU_EVENT:
+                //                 for (uint16_t i = 0; i < rev_data->data_len; i++) {
+                //                     tx_buf[8 + i] = rev_data->data[i];
+                //                 }
+                //                 break;
+                // #endif
 
             default:
                 break;

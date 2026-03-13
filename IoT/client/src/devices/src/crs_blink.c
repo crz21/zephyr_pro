@@ -1,4 +1,4 @@
-#ifdef(CONFIG_BLINK)
+#ifdef CONFIG_BLINK
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/kernel.h>

@@ -1,4 +1,4 @@
-#ifdef(CONFIG_AHT20_TS)
+#ifdef CONFIG_AHT20_TS
 #include <stdint.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/kernel.h>

@@ -15,7 +15,7 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/hci.h>
-#include <zephyr/bluetooth/services/iot.h>
+#include <zephyr/bluetooth/services/crs.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>

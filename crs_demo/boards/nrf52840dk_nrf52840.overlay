@@ -71,15 +71,5 @@ crs_as201_imu_uart: &uart1 {
 };
 
 &uart0 {
-	// status = "okay";
-	// // pinctrl-0 = <&as201_imu_uart_default>;
-	// current-speed = <115200>;
-
-	/* 将兼容性更改为我们的驱动程序识别的名称 */
-    /* 注意：这会覆盖原生的串口驱动，仅用于 RTIO 实验 */
-    compatible = "vnd_uart"; 
     status = "okay";
-    /* 模拟驱动需要的自定义属性 */
-    sample_period = <100>;    /* 假设每 100ms 触发一次接收逻辑 */
-    sample_size = <32>;       /* 每次读取 32 字节 */
 };
