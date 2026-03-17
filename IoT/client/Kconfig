@@ -1,4 +1,4 @@
-mainmenu "IOT DEMO"
+mainmenu "IoT Server"
 
 menu "Application configuration"
 
@@ -13,11 +13,11 @@ config OT_COAP_SAMPLE_SW
 	bool "Enable switch support"
 	default y
 
-config OT_COAP_SHELL
+config BT_CRS
 	bool "Enable switch support"
 	default n
 
-config AS201_IMU
+config XXX_IMU
     bool "Enable AS201 IMU Support"
     default n
     help 
@@ -40,30 +40,6 @@ config BMP280_PS
     default n
     help 
       This option enables the custom BMP280 pressure sensor driver logic.
-
-config HRBO
-    bool "Enable HRBO Support"
-    default n
-    help 
-      This option enables the custom Oximeter and Heart-Rate Sensor driver logic.
-
-config BLINK
-    bool "Enable BLINK Support"
-    default n
-    help 
-      This option enables the custom BLINK driver logic.
-
-config DEBUG_UART
-    bool "Enable DEBUG UART Support"
-    default n
-    help 
-      This option enables the custom DEBUG UART driver logic.
-
-config RTIO_UART
-    bool "Enable RTIO UART Support"
-    default n
-    help 
-      This option enables the custom RTIO UART driver logic.
 
 config OPEN_THREAD
     bool "Enable OPEN THREAD Support"

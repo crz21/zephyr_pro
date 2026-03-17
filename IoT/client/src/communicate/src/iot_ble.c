@@ -1,3 +1,4 @@
+#ifdef CONFIG_BT_CRS
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
@@ -23,7 +24,7 @@ static struct k_work advertise_work;
 
 static const struct bt_data ad[] = {
     BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
-    BT_DATA_BYTES(BT_DATA_UUID16_ALL, BT_UUID_16_ENCODE(BT_UUID_IOT_VAL), BT_UUID_16_ENCODE(BT_UUID_BAS_VAL),
+    BT_DATA_BYTES(BT_DATA_UUID16_ALL, BT_UUID_16_ENCODE(BT_UUID_CRS_VAL), BT_UUID_16_ENCODE(BT_UUID_BAS_VAL),
                   BT_UUID_16_ENCODE(BT_UUID_DIS_VAL)),
     BT_DATA_BYTES(BT_DATA_UUID128_ALL, SMP_BT_SVC_UUID_VAL),
 
@@ -161,15 +162,15 @@ static void disconnect_option(void)
     }
 }
 
-static void iot_ntf_changed(bool enabled)
+static void crs_ntf_changed(bool enabled)
 {
     crf_ntf_enabled = enabled;
 
-    printk("IOT notification status changed: %s\n", enabled ? "enabled" : "disabled");
+    printk("CRS notification status changed: %s\n", enabled ? "enabled" : "disabled");
 }
 
-static struct bt_iot_cb iot_cb = {
-    .ntf_changed = iot_ntf_changed,
+static struct bt_crs_cb crs_cb = {
+    .ntf_changed = crs_ntf_changed,
 };
 
 // static void auth_cancel(struct bt_conn* conn)
@@ -185,10 +186,10 @@ static struct bt_iot_cb iot_cb = {
 //     .cancel = auth_cancel,
 // };
 
-void iot_notify(uint8_t* data, uint16_t len)
+void crs_notify(uint8_t* data, uint16_t len)
 {
     if (crf_ntf_enabled) {
-        bt_iot_notify(data, len);
+        bt_crs_notify(data, len);
     }
 }
 
@@ -201,7 +202,7 @@ static void bt_ready(int err)
     }
 }
 
-static void iot_ble_init(void)
+static void crs_ble_init(void)
 {
     int err;
 
@@ -215,12 +216,12 @@ static void iot_ble_init(void)
     printk("Bluetooth initialized\n");
 
     // bt_conn_auth_cb_register(&auth_cb_display);
-    bt_iot_cb_register(&iot_cb);
+    bt_crs_cb_register(&crs_cb);
 }
 
 void ble_thread(void)
 {
-    iot_ble_init();
+    crs_ble_init();
 
     for (;;) {
         disconnect_option();
@@ -229,3 +230,4 @@ void ble_thread(void)
 }
 
 K_THREAD_DEFINE(ble_thread_id, 1024, ble_thread, NULL, NULL, NULL, BLE_PRIORITY, 0, 0);
+#endif

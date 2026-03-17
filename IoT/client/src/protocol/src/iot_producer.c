@@ -67,7 +67,9 @@ static void project_zero_process_application_message(void)
                 }
 
                 tx_buf[108] = 0xa5;
-                iot_notify(tx_buf, sizeof(tx_buf));
+#ifdef CONFIG_BT_CRS
+                crs_notify(tx_buf, sizeof(tx_buf));
+#endif
                 break;
 #endif
 
@@ -85,13 +87,13 @@ static void project_zero_process_application_message(void)
                 break;
 #endif
 
-#ifdef CONFIG_AS201_IMU
-            case AS201_IMU_EVENT:
-                for (uint16_t i = 0; i < rev_data->data_len; i++) {
-                    tx_buf[8 + i] = rev_data->data[i];
-                }
-                break;
-#endif
+                // #ifdef CONFIG_AS201_IMU
+                //             case AS201_IMU_EVENT:
+                //                 for (uint16_t i = 0; i < rev_data->data_len; i++) {
+                //                     tx_buf[8 + i] = rev_data->data[i];
+                //                 }
+                //                 break;
+                // #endif
 
             default:
                 break;
@@ -119,17 +121,10 @@ static void producer_thread(void* rec, void* p2, void* p3)
                                                | BMP280_PS_EVENT
 #endif
 
-#ifdef CONFIG_HRBO
-                                               | HRBO_EVENT
-#endif
-
-#ifdef(CONFIG_LD2410C_DDRS)
+#ifdef CONFIG_LD2410C_DDRS
                                                | LD2410C_DDRS_EVENT
 #endif
 
-#ifdef CONFIG_AS201_IMU
-                                               | AS201_IMU_EVENT
-#endif
                                            ,
                                            true, K_FOREVER);
         if (event_bits != 0) {

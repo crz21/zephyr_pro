@@ -3,13 +3,12 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
+#ifdef CONFIG_OPEN_THREAD
  #include <zephyr/drivers/gpio.h>
  #include <zephyr/logging/log.h>
  LOG_MODULE_DECLARE(coap);
  
- #include "coap_utils.h"
- #include "led.h"
+ #include "main.h"
  
  #ifdef CONFIG_OT_COAP_SAMPLE_SERVER
  struct led_rsc_data {
@@ -42,7 +41,7 @@
 	 struct led_rsc_ctx *led_ctx = rsc->mContext;
 	 int ret;
  
-	 LOG_INF("Initializing the LED");
+	//  LOG_INF("Initializing the LED");
 	 for (int i = 0; i < led_ctx->count; i++) {
 		 struct led_rsc_data *led = &led_ctx->led[i];
  
@@ -52,7 +51,7 @@
  
 		 ret = gpio_pin_configure_dt(&led->gpio, GPIO_OUTPUT);
 		 if (ret) {
-			 LOG_ERR("Failed to configure the GPIO");
+			//  LOG_ERR("Failed to configure the GPIO");
 			 return ret;
 		 }
 	 }
@@ -71,7 +70,7 @@
 				&led_data);
  
 	 if (led_data.led_id >= led_ctx->count) {
-		 LOG_ERR("Invalid led id: %x", led_data.led_id);
+		//  LOG_ERR("Invalid led id: %x", led_data.led_id);
 		 return -EINVAL;
 	 }
 	 led = &led_ctx->led[led_data.led_id];
@@ -90,7 +89,7 @@
 		 ret = gpio_pin_set_dt(&led->gpio, led->state);
 		 break;
 	 default:
-		 LOG_ERR("Set an unsupported LED state: %x", led_data.state);
+		//  LOG_ERR("Set an unsupported LED state: %x", led_data.state);
 	 }
  
 	 return ret;
@@ -149,7 +148,7 @@
  {
 	 otInstance *ot = openthread_get_default_instance();
  
-	 LOG_INF("Registering LED rsc");
+	//  LOG_INF("Registering LED rsc");
 	 led_init(&led_rsc);
 	 otCoapAddResource(ot, &led_rsc);
  }
@@ -216,4 +215,4 @@
 	 *state = led.leds[led_id].state;
 	 return ret;
  }
- 
+ #endif
