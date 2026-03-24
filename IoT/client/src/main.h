@@ -17,23 +17,15 @@ enum {
 };
 #include <zephyr/kernel.h>
 
-#include "protocol/inc/iot_producer.h"
-#ifdef CONFIG_BT_CRS
-#include "communicate/inc/iot_ble.h"
+#include "iot_producer.h"
+#include "protocol/inc/iot_ble.h"
 #define BLE_PRIORITY (5)
-#endif
-#ifdef CONFIG_OPEN_THREAD
-#include "communicate/inc/iot_openthread.h"
-#include "devices/inc/iot_button.h"
-#include "devices/inc/iot_led.h"
+
 #include "protocol/inc/iot_coap_utils.h"
 #define OPENTHREAD_PRIORITY (5)
-#endif
 
-#ifdef CONFIG_DEBUG_UART
-#include "communicate/inc/iot_debug_uart.h"
-#define DEBUG_UART_PRIORITY (8)
-#endif
+#include "devices/inc/iot_button.h"
+#include "devices/inc/iot_led.h"
 
 #ifdef CONFIG_AHT20_TS
 #include "devices/inc/iot_aht20_ts.h"

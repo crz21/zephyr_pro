@@ -3,6 +3,8 @@
 
 #include "main.h"
 
+LOG_MODULE_REGISTER(iot_producer, CONFIG_IOT_PRODUCER_LOG_LEVEL);
+
 typedef struct {
     uint16_t data_len;
     uint8_t data[];
@@ -13,9 +15,71 @@ typedef struct {
     uint32_t event;
     void* p_data;
 } p_msg_t;
+
+#define OT_CONNECTION_LED DK_LED1
+#define BLE_CONNECTION_LED DK_LED2
+#define MTD_SED_LED DK_LED3
+
+#define COMMAND_REQUEST_UNICAST 'u'
+#define COMMAND_REQUEST_MULTICAST 'm'
+#define COMMAND_REQUEST_PROVISIONING 'p'
+
 #define MSG_QUEUE_SIZE (100)
 K_MSGQ_DEFINE(g_msg_queue, sizeof(p_msg_t*), MSG_QUEUE_SIZE, 4);
 K_EVENT_DEFINE(g_event_group);
+
+static void on_nus_received(struct bt_conn* conn, const uint8_t* const data, uint16_t len)
+{
+    LOG_INF("Received data: %c", data[0]);
+
+    switch (*data) {
+    case COMMAND_REQUEST_UNICAST:
+        coap_client_toggle_one_light();
+        break;
+
+    case COMMAND_REQUEST_MULTICAST:
+        coap_client_toggle_mesh_lights();
+        break;
+
+    case COMMAND_REQUEST_PROVISIONING:
+        coap_client_send_provisioning_request();
+        break;
+
+    default:
+        LOG_WRN("Received invalid data from NUS");
+    }
+}
+
+static void on_nus_sent(struct bt_conn* conn) {}
+
+static void on_ble_connect(struct k_work* item)
+{
+    ARG_UNUSED(item);
+
+    dk_set_led_on(BLE_CONNECTION_LED);
+}
+
+static void on_ble_disconnect(struct k_work* item)
+{
+    ARG_UNUSED(item);
+
+    dk_set_led_off(BLE_CONNECTION_LED);
+    disconnect_option();
+}
+
+static void on_ot_connect(struct k_work* item)
+{
+    ARG_UNUSED(item);
+
+    dk_set_led_on(OT_CONNECTION_LED);
+}
+
+static void on_ot_disconnect(struct k_work* item)
+{
+    ARG_UNUSED(item);
+
+    dk_set_led_off(OT_CONNECTION_LED);
+}
 
 void create_event_payload(uint8_t* data, uint16_t len, uint32_t event)
 {
@@ -24,7 +88,7 @@ void create_event_payload(uint8_t* data, uint16_t len, uint32_t event)
     if (g_msg == NULL || g_data == NULL) {
         k_free(g_msg);
         k_free(g_data);
-        // LOG_ERR("Memory allocation failed!");
+        LOG_ERR("Memory allocation failed!");
         return;
     }
 
@@ -38,7 +102,7 @@ void create_event_payload(uint8_t* data, uint16_t len, uint32_t event)
     if (k_msgq_put(&g_msg_queue, &g_msg, K_NO_WAIT) != 0) {
         k_free(g_data);
         k_free(g_msg);
-        // LOG_WRN("Queue full, dropping packet");
+        LOG_WRN("Queue full, dropping packet");
     } else
         k_event_post(&g_event_group, event);
 }
@@ -110,6 +174,29 @@ static void project_zero_process_application_message(void)
 
 static void producer_thread(void* rec, void* p2, void* p3)
 {
+    int ret;
+
+    /** status led */
+    ret = dk_leds_init();
+    if (ret) {
+        LOG_ERR("Cannot init leds, (error: %d)", ret);
+        return 0;
+    }
+
+    /** ble work */
+    struct bt_nus_cb nus_clbs = {
+        .received = on_nus_received,
+        .sent = on_nus_sent,
+    };
+    ret = ble_utils_init(&nus_clbs, on_ble_connect, on_ble_disconnect);
+    if (ret) {
+        LOG_ERR("Cannot init BLE utilities");
+        return 0;
+    }
+
+    /** coap work */
+    coap_client_utils_init(on_ot_connect, on_ot_disconnect, on_mtd_mode_toggle);
+
     for (;;) {
         uint32_t event_bits = k_event_wait(&g_event_group,
                                            0

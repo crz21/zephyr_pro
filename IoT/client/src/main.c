@@ -59,6 +59,7 @@ int main(void)
 
     k_mutex_init(&i2c_mutex);
 
+
     while (1) {
         k_sleep(K_MSEC(10));
 #ifdef CONFIG_MCUMGR_GRP_STAT

@@ -1,309 +1,244 @@
 /*
- * Copyright (c) 2024 Alexandre Bailon
+ * Copyright (c) 2020 Nordic Semiconductor ASA
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
  */
 
-#include <errno.h>
+#include <coap_server_client_interface.h>
+#include <net/coap_utils.h>
+#include <openthread.h>
+#include <openthread/thread.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/net/socket.h>
 
-// #include <zephyr/logging/log.h>
-// LOG_MODULE_DECLARE(coap);
+#include "coap_client_utils.h"
 
-#include <openthread/platform/radio.h>
+LOG_MODULE_REGISTER(iot_coap_client_utils, CONFIG_IOT_COAP_CLIENT_UTILS_LOG_LEVEL);
 
-#include "main.h"
+#define RESPONSE_POLL_PERIOD 100
 
-static uint8_t coap_buf[COAP_MAX_BUF_SIZE];
-static uint8_t coap_dev_id[COAP_DEVICE_ID_SIZE];
+static uint32_t poll_period;
 
-#ifdef CONFIG_OT_COAP_SAMPLE_SERVER
-static void coap_default_handler(void* context, otMessage* message, const otMessageInfo* message_info)
+static bool is_connected;
+
+#define COAP_CLIENT_WORKQ_STACK_SIZE 2048
+#define COAP_CLIENT_WORKQ_PRIORITY 5
+
+K_THREAD_STACK_DEFINE(coap_client_workq_stack_area, COAP_CLIENT_WORKQ_STACK_SIZE);
+static struct k_work_q coap_client_workq;
+
+static struct k_work unicast_light_work;
+static struct k_work multicast_light_work;
+static struct k_work toggle_MTD_SED_work;
+static struct k_work provisioning_work;
+static struct k_work on_connect_work;
+static struct k_work on_disconnect_work;
+
+mtd_mode_toggle_cb_t on_mtd_mode_toggle;
+
+/* Options supported by the server */
+static const char* const light_option[] = {LIGHT_URI_PATH, NULL};
+static const char* const provisioning_option[] = {PROVISIONING_URI_PATH, NULL};
+
+/* Thread multicast mesh local address */
+static struct sockaddr_in6 multicast_local_addr = {
+    .sin6_family = AF_INET6,
+    .sin6_port = htons(COAP_PORT),
+    .sin6_addr.s6_addr = {0xff, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                          0x01},
+    .sin6_scope_id = 0U};
+
+/* Variable for storing server address acquiring in provisioning handshake */
+static char unique_local_addr_str[INET6_ADDRSTRLEN];
+static struct sockaddr_in6 unique_local_addr = {.sin6_family = AF_INET6,
+                                                .sin6_port = htons(COAP_PORT),
+                                                .sin6_addr.s6_addr =
+                                                    {
+                                                        0,
+                                                    },
+                                                .sin6_scope_id = 0U};
+
+static bool is_mtd_in_med_mode(otInstance* instance) { return otThreadGetLinkMode(instance).mRxOnWhenIdle; }
+
+static void poll_period_response_set(void)
 {
-    ARG_UNUSED(context);
-    ARG_UNUSED(message);
-    ARG_UNUSED(message_info);
+    otError error;
 
-    // LOG_INF("Received CoAP message that does not match any request "
-    // 	"or resource");
+    otInstance* instance = openthread_get_default_instance();
+
+    if (is_mtd_in_med_mode(instance)) {
+        return;
+    }
+
+    if (!poll_period) {
+        poll_period = otLinkGetPollPeriod(instance);
+
+        error = otLinkSetPollPeriod(instance, RESPONSE_POLL_PERIOD);
+        __ASSERT(error == OT_ERROR_NONE, "Failed to set pool period");
+
+        LOG_INF("Poll Period: %dms set", RESPONSE_POLL_PERIOD);
+    }
 }
-#endif /* CONFIG_OT_COAP_SAMPLE_SERVER */
 
-static int coap_req_send(const char* addr, const char* uri, uint8_t* buf, int len, otCoapResponseHandler handler,
-                         void* ctx, otCoapCode code)
+static void poll_period_restore(void)
 {
-    otInstance* ot;
-    otMessage* msg;
-    otMessageInfo msg_info;
-    otError err;
-    int ret;
+    otError error;
+    otInstance* instance = openthread_get_default_instance();
 
-    ot = openthread_get_default_instance();
-    if (!ot) {
-        // LOG_ERR("Failed to get an OpenThread instance");
-        return -ENODEV;
+    if (is_mtd_in_med_mode(instance)) {
+        return;
     }
 
-    memset(&msg_info, 0, sizeof(msg_info));
-    otIp6AddressFromString(addr, &msg_info.mPeerAddr);
-    msg_info.mPeerPort = OT_DEFAULT_COAP_PORT;
+    if (poll_period) {
+        error = otLinkSetPollPeriod(instance, poll_period);
+        __ASSERT_NO_MSG(error == OT_ERROR_NONE);
 
-    msg = otCoapNewMessage(ot, NULL);
-    if (!msg) {
-        // LOG_ERR("Failed to allocate a new CoAP message");
-        return -ENOMEM;
+        LOG_INF("Poll Period: %dms restored", poll_period);
+        poll_period = 0;
+    }
+}
+
+static int on_provisioning_reply(const struct coap_packet* response, struct coap_reply* reply,
+                                 const struct sockaddr* from)
+{
+    int ret = 0;
+    const uint8_t* payload;
+    uint16_t payload_size = 0u;
+
+    ARG_UNUSED(reply);
+    ARG_UNUSED(from);
+
+    payload = coap_packet_get_payload(response, &payload_size);
+
+    if (payload == NULL || payload_size != sizeof(unique_local_addr.sin6_addr)) {
+        LOG_ERR("Received data is invalid");
+        ret = -EINVAL;
+        goto exit;
     }
 
-    otCoapMessageInit(msg, OT_COAP_TYPE_CONFIRMABLE, code);
+    memcpy(&unique_local_addr.sin6_addr, payload, payload_size);
 
-    err = otCoapMessageAppendUriPathOptions(msg, uri);
-    if (err != OT_ERROR_NONE) {
-        // LOG_ERR("Failed to append uri-path: %s", otThreadErrorToString(err));
-        ret = -EBADMSG;
-        goto err;
+    if (!zsock_inet_ntop(AF_INET6, payload, unique_local_addr_str, INET6_ADDRSTRLEN)) {
+        LOG_ERR("Received data is not IPv6 address: %d", errno);
+        ret = -errno;
+        goto exit;
     }
 
-    err = otCoapMessageSetPayloadMarker(msg);
-    if (err != OT_ERROR_NONE) {
-        // LOG_ERR("Failed to set payload marker: %s", otThreadErrorToString(err));
-        ret = -EBADMSG;
-        goto err;
+    LOG_INF("Received peer address: %s", unique_local_addr_str);
+
+exit:
+    if (IS_ENABLED(CONFIG_OPENTHREAD_MTD_SED)) {
+        poll_period_restore();
     }
 
-    err = otMessageAppend(msg, buf, len);
-    if (err != OT_ERROR_NONE) {
-        // LOG_ERR("Failed to set append payload to response: %s", otThreadErrorToString(err));
-        ret = -EBADMSG;
-        goto err;
-    }
-
-    err = otCoapSendRequest(ot, msg, &msg_info, handler, ctx);
-    if (err != OT_ERROR_NONE) {
-        // LOG_ERR("Failed to send the request: %s", otThreadErrorToString(err));
-        ret = -EIO; /* Find a better error code */
-        goto err;
-    }
-
-    return 0;
-
-err:
-    otMessageFree(msg);
     return ret;
 }
 
-int coap_put_req_send(const char* addr, const char* uri, uint8_t* buf, int len, otCoapResponseHandler handler,
-                      void* ctx)
+static void toggle_one_light(struct k_work* item)
 {
-    return coap_req_send(addr, uri, buf, len, handler, ctx, OT_COAP_CODE_PUT);
+    uint8_t payload = (uint8_t)THREAD_COAP_UTILS_LIGHT_CMD_TOGGLE;
+
+    ARG_UNUSED(item);
+
+    if (unique_local_addr.sin6_addr.s6_addr16[0] == 0) {
+        LOG_WRN(
+            "Peer address not set. Activate 'provisioning' option "
+            "on the server side");
+        return;
+    }
+
+    LOG_INF("Send 'light' request to: %s", unique_local_addr_str);
+    coap_send_request(COAP_METHOD_PUT, (const struct sockaddr*)&unique_local_addr, light_option, &payload,
+                      sizeof(payload), NULL);
 }
 
-int coap_get_req_send(const char* addr, const char* uri, uint8_t* buf, int len, otCoapResponseHandler handler,
-                      void* ctx)
+static void toggle_mesh_lights(struct k_work* item)
 {
-    return coap_req_send(addr, uri, buf, len, handler, ctx, OT_COAP_CODE_GET);
+    static uint8_t command = (uint8_t)THREAD_COAP_UTILS_LIGHT_CMD_OFF;
+
+    ARG_UNUSED(item);
+
+    command = ((command == THREAD_COAP_UTILS_LIGHT_CMD_OFF) ? THREAD_COAP_UTILS_LIGHT_CMD_ON
+                                                            : THREAD_COAP_UTILS_LIGHT_CMD_OFF);
+
+    LOG_INF("Send multicast mesh 'light' request");
+    coap_send_request(COAP_METHOD_PUT, (const struct sockaddr*)&multicast_local_addr, light_option, &command,
+                      sizeof(command), NULL);
 }
 
-int coap_resp_send(otMessage* req, const otMessageInfo* req_info, uint8_t* buf, int len)
+static void send_provisioning_request(struct k_work* item)
 {
-    otInstance* ot;
-    otMessage* resp;
-    otCoapCode resp_code;
-    otCoapType resp_type;
-    otError err;
-    int ret;
+    ARG_UNUSED(item);
 
-    ot = openthread_get_default_instance();
-    if (!ot) {
-        // LOG_ERR("Failed to get an OpenThread instance");
-        return -ENODEV;
+    if (IS_ENABLED(CONFIG_OPENTHREAD_MTD_SED)) {
+        /* decrease the polling period for higher responsiveness */
+        poll_period_response_set();
     }
 
-    resp = otCoapNewMessage(ot, NULL);
-    if (!resp) {
-        // LOG_ERR("Failed to allocate a new CoAP message");
-        return -ENOMEM;
-    }
-
-    switch (otCoapMessageGetType(req)) {
-    case OT_COAP_TYPE_CONFIRMABLE:
-        resp_type = OT_COAP_TYPE_ACKNOWLEDGMENT;
-        break;
-    case OT_COAP_TYPE_NON_CONFIRMABLE:
-        resp_type = OT_COAP_TYPE_NON_CONFIRMABLE;
-        break;
-    default:
-        // LOG_ERR("Invalid message type");
-        ret = -EINVAL;
-        goto err;
-    }
-
-    switch (otCoapMessageGetCode(req)) {
-    case OT_COAP_CODE_GET:
-        resp_code = OT_COAP_CODE_CONTENT;
-        break;
-    case OT_COAP_CODE_PUT:
-        resp_code = OT_COAP_CODE_CHANGED;
-        break;
-    default:
-        // LOG_ERR("Invalid message code");
-        ret = -EINVAL;
-        goto err;
-    }
-
-    err = otCoapMessageInitResponse(resp, req, resp_type, resp_code);
-    if (err != OT_ERROR_NONE) {
-        // LOG_ERR("Failed to initialize the response: %s", otThreadErrorToString(err));
-        ret = -EBADMSG;
-        goto err;
-    }
-
-    err = otCoapMessageSetPayloadMarker(resp);
-    if (err != OT_ERROR_NONE) {
-        // LOG_ERR("Failed to set payload marker: %s", otThreadErrorToString(err));
-        ret = -EBADMSG;
-        goto err;
-    }
-
-    err = otMessageAppend(resp, buf, len);
-    if (err != OT_ERROR_NONE) {
-        // LOG_ERR("Failed to set append payload to response: %s", otThreadErrorToString(err));
-        ret = -EBADMSG;
-        goto err;
-    }
-
-    err = otCoapSendResponse(ot, resp, req_info);
-    if (err != OT_ERROR_NONE) {
-        // LOG_ERR("Failed to send the response: %s", otThreadErrorToString(err));
-        ret = -EIO;
-        goto err;
-    }
-
-    return 0;
-
-err:
-    otMessageFree(resp);
-    return ret;
+    LOG_INF("Send 'provisioning' request");
+    coap_send_request(COAP_METHOD_GET, (const struct sockaddr*)&multicast_local_addr, provisioning_option, NULL, 0u,
+                      on_provisioning_reply);
 }
 
-int coap_req_handler(void* ctx, otMessage* msg, const otMessageInfo* msg_info, coap_req_handler_put put_fn,
-                     coap_req_handler_get get_fn)
+static void toggle_minimal_sleepy_end_device(struct k_work* item)
 {
-    otCoapCode msg_code = otCoapMessageGetCode(msg);
-    otCoapType msg_type = otCoapMessageGetType(msg);
-    int ret;
+    otError error;
+    otLinkModeConfig mode;
+    struct otInstance* instance = openthread_get_default_instance();
 
-    if (msg_type != OT_COAP_TYPE_CONFIRMABLE && msg_type != OT_COAP_TYPE_NON_CONFIRMABLE) {
-        return -EINVAL;
+    openthread_mutex_lock();
+    mode = otThreadGetLinkMode(instance);
+    mode.mRxOnWhenIdle = !mode.mRxOnWhenIdle;
+    error = otThreadSetLinkMode(instance, mode);
+    openthread_mutex_unlock();
+
+    if (error != OT_ERROR_NONE) {
+        LOG_ERR("Failed to set MLE link mode configuration");
+    } else {
+        on_mtd_mode_toggle(mode.mRxOnWhenIdle);
     }
-
-    if (msg_code == OT_COAP_CODE_PUT && put_fn) {
-        int len = otMessageGetLength(msg) - otMessageGetOffset(msg);
-
-        otMessageRead(msg, otMessageGetOffset(msg), coap_buf, len);
-        ret = put_fn(ctx, coap_buf, len);
-        if (ret) {
-            return ret;
-        }
-
-        if (msg_type == OT_COAP_TYPE_CONFIRMABLE) {
-            ret = get_fn(ctx, msg, msg_info);
-        }
-
-        return ret;
-    }
-
-    if (msg_code == OT_COAP_CODE_GET) {
-        return get_fn(ctx, msg, msg_info);
-    }
-
-    return -EINVAL;
 }
 
-const char* coap_device_id(void)
+static void update_device_state(void)
 {
-    otInstance* ot = openthread_get_default_instance();
-    otExtAddress eui64;
-    int i;
+    struct otInstance* instance = openthread_get_default_instance();
+    otLinkModeConfig mode = otThreadGetLinkMode(instance);
+    on_mtd_mode_toggle(mode.mRxOnWhenIdle);
+}
 
-    if (coap_dev_id[0] != '\0') {
-        return coap_dev_id;
-    }
+static void on_thread_state_changed(otChangedFlags flags, void* user_data)
+{
+    struct otInstance* instance = openthread_get_default_instance();
 
-    otPlatRadioGetIeeeEui64(ot, eui64.m8);
-    for (i = 0; i < 8; i++) {
-        if (i * 2 >= COAP_DEVICE_ID_SIZE) {
-            i = COAP_DEVICE_ID_SIZE - 1;
+    if (flags & OT_CHANGED_THREAD_ROLE) {
+        switch (otThreadGetDeviceRole(instance)) {
+        case OT_DEVICE_ROLE_CHILD:
+        case OT_DEVICE_ROLE_ROUTER:
+        case OT_DEVICE_ROLE_LEADER:
+            k_work_submit_to_queue(&coap_client_workq, &on_connect_work);
+            is_connected = true;
+            break;
+
+        case OT_DEVICE_ROLE_DISABLED:
+        case OT_DEVICE_ROLE_DETACHED:
+        default:
+            k_work_submit_to_queue(&coap_client_workq, &on_disconnect_work);
+            is_connected = false;
             break;
         }
-        sprintf(coap_dev_id + i * 2, "%02x", eui64.m8[i]);
     }
-    coap_dev_id[i * 2] = '\0';
-
-    return coap_dev_id;
 }
+static struct openthread_state_changed_callback ot_state_chaged_cb = {.otCallback = on_thread_state_changed};
 
-int coap_get_data(otMessage* msg, void* buf, int* len)
+static void submit_work_if_connected(struct k_work* work)
 {
-    int coap_len = otMessageGetLength(msg) - otMessageGetOffset(msg);
-
-    if (coap_len > *len) {
-        return -ENOMEM;
+    if (is_connected) {
+        k_work_submit_to_queue(&coap_client_workq, work);
+    } else {
+        LOG_INF("Connection is broken");
     }
-
-    *len = coap_len;
-    otMessageRead(msg, otMessageGetOffset(msg), buf, coap_len);
-
-    return 0;
 }
-
-int coap_init(void)
-{
-    otError err;
-    otInstance* ot;
-
-    ot = openthread_get_default_instance();
-    if (!ot) {
-        // LOG_ERR("Failed to get an OpenThread instance");
-        return -ENODEV;
-    }
-
-#ifdef CONFIG_OT_COAP_SAMPLE_SERVER
-    otCoapSetDefaultHandler(ot, coap_default_handler, NULL);
-#endif /* CONFIG_OT_COAP_SAMPLE_SERVER */
-
-    err = otCoapStart(ot, OT_DEFAULT_COAP_PORT);
-    if (err != OT_ERROR_NONE) {
-        // LOG_ERR("Cannot start CoAP: %s", otThreadErrorToString(err));
-        return -EBADMSG;
-    }
-
-    return 0;
-}
-
-static void on_thread_state_changed(otChangedFlags flags, void *user_data)
-{
-	struct otInstance *instance = openthread_get_default_instance();
-
-	if (flags & OT_CHANGED_THREAD_ROLE) {
-		switch (otThreadGetDeviceRole(instance)) {
-		case OT_DEVICE_ROLE_CHILD:
-		case OT_DEVICE_ROLE_ROUTER:
-		case OT_DEVICE_ROLE_LEADER:
-			k_work_submit_to_queue(&coap_client_workq, &on_connect_work);
-			is_connected = true;
-			break;
-
-		case OT_DEVICE_ROLE_DISABLED:
-		case OT_DEVICE_ROLE_DETACHED:
-		default:
-			k_work_submit_to_queue(&coap_client_workq, &on_disconnect_work);
-			is_connected = false;
-			break;
-		}
-	}
-}
-
-static struct openthread_state_changed_callback ot_state_chaged_cb = {
-	.otCallback = on_thread_state_changed};
 
 void coap_client_utils_init(ot_connection_cb_t on_connect, ot_disconnection_cb_t on_disconnect,
                             mtd_mode_toggle_cb_t on_toggle)
@@ -319,6 +254,8 @@ void coap_client_utils_init(ot_connection_cb_t on_connect, ot_disconnection_cb_t
 
     k_work_init(&on_connect_work, on_connect);
     k_work_init(&on_disconnect_work, on_disconnect);
+    k_work_init(&unicast_light_work, toggle_one_light);
+    k_work_init(&multicast_light_work, toggle_mesh_lights);
     k_work_init(&provisioning_work, send_provisioning_request);
 
     openthread_state_changed_callback_register(&ot_state_chaged_cb);
@@ -327,5 +264,18 @@ void coap_client_utils_init(ot_connection_cb_t on_connect, ot_disconnection_cb_t
     if (IS_ENABLED(CONFIG_OPENTHREAD_MTD_SED)) {
         k_work_init(&toggle_MTD_SED_work, toggle_minimal_sleepy_end_device);
         update_device_state();
+    }
+}
+
+void coap_client_toggle_one_light(void) { submit_work_if_connected(&unicast_light_work); }
+
+void coap_client_toggle_mesh_lights(void) { submit_work_if_connected(&multicast_light_work); }
+
+void coap_client_send_provisioning_request(void) { submit_work_if_connected(&provisioning_work); }
+
+void coap_client_toggle_minimal_sleepy_end_device(void)
+{
+    if (IS_ENABLED(CONFIG_OPENTHREAD_MTD_SED)) {
+        k_work_submit_to_queue(&coap_client_workq, &toggle_MTD_SED_work);
     }
 }
