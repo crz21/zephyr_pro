@@ -8,11 +8,11 @@ cmake_minimum_required(VERSION 3.20.0)
 
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
-project(openthread_coap_server)
+project(openthread_coap_router)
 
 FILE(GLOB app_sources src/*.c)
 # NORDIC SDK APP START
 target_sources(app PRIVATE ${app_sources})
 
-target_include_directories(app PRIVATE interface)
+target_include_directories(app PRIVATE src)
 # NORDIC SDK APP END

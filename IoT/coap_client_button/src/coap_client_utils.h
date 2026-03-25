@@ -39,21 +39,9 @@ void coap_client_utils_init(ot_connection_cb_t on_connect,
 			    ot_disconnection_cb_t on_disconnect,
 			    mtd_mode_toggle_cb_t on_toggle);
 
-/** @brief Toggle light on the CoAP server node.
- *
- * @note The CoAP server should be paired before to have an affect.
- */
-void coap_client_toggle_one_light(void);
-
 /** @brief Toggle lights on all CoAP servers in the network mesh.
  */
 void coap_client_toggle_mesh_lights(void);
-
-/** @brief Request for the CoAP server address to pair.
- *
- * @note Enable paring on the CoAP server to get the address.
- */
-void coap_client_send_provisioning_request(void);
 
 /** @brief Toggle SED to MED and MED to SED modes.
  *
