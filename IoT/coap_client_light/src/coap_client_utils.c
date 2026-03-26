@@ -1,16 +1,29 @@
+// #include <openthread/coap.h>
+// #include <openthread/ip6.h>
+// #include <openthread/message.h>
+// #include <openthread/thread.h>
+// #include <zephyr/logging/log.h>
+// #include <zephyr/net/net_l2.h>
+// #include <zephyr/net/net_pkt.h>
+// #include <zephyr/net/openthread.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/net_l2.h>
+#include <zephyr/net/openthread.h>
 #include <openthread/coap.h>
 #include <openthread/ip6.h>
 #include <openthread/message.h>
 #include <openthread/thread.h>
-#include <zephyr/logging/log.h>
-#include <zephyr/net/net_l2.h>
-#include <zephyr/net/net_pkt.h>
-#include <zephyr/net/openthread.h>
 
-#include "ot_coap_utils.h"
+#include "coap_client_utils.h"
 
 LOG_MODULE_REGISTER(ot_coap_utils, CONFIG_OT_COAP_UTILS_LOG_LEVEL);
 #define LIGHT_URI_PATH "light"
+
+#define COAP_PORT 5683
+
+static bool is_connected;
+
 struct server_context {
     struct otInstance* ot;
     light_request_callback_t on_light_request;
@@ -49,7 +62,7 @@ static void light_request_handler(void* context, otMessage* message, const otMes
         goto end;
     }
 
-    if (otCoapMessageGetCode(message) != OT_COAP_CODE_PUT || otCoapMessageGetCode(message) != OT_COAP_CODE_POST) {
+    if (otCoapMessageGetCode(message) != OT_COAP_CODE_PUT && otCoapMessageGetCode(message) != OT_COAP_CODE_POST) {
         LOG_ERR("Light handler - Unexpected CoAP code");
         goto end;
     }
@@ -163,6 +176,7 @@ int coap_client_utils_init(light_request_callback_t on_light_request, ot_connect
         k_work_init(&toggle_MTD_SED_work, toggle_minimal_sleepy_end_device);
         update_device_state();
     }
+    
     error = otCoapStart(srv_context.ot, COAP_PORT);
     if (error != OT_ERROR_NONE) {
         LOG_ERR("Failed to start OT CoAP. Error: %d", error);

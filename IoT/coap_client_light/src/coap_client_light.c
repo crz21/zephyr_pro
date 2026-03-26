@@ -6,11 +6,15 @@
 
 #include <dk_buttons_and_leds.h>
 #include <openthread/thread.h>
+#include <ram_pwrdn.h>
+#include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/net/openthread.h>
+#include <zephyr/pm/device.h>
 
-#include "ot_coap_utils.h"
+#include "ble_utils.h"
+#include "coap_client_utils.h"
 
 LOG_MODULE_REGISTER(coap_server, CONFIG_COAP_SERVER_LOG_LEVEL);
 
@@ -19,29 +23,11 @@ LOG_MODULE_REGISTER(coap_server, CONFIG_COAP_SERVER_LOG_LEVEL);
 #define MTD_SED_LED DK_LED3
 #define LIGHT_LED DK_LED4
 
-#define COAP_PORT 5683
-
 enum light_command {
     THREAD_COAP_UTILS_LIGHT_0_CMD_TOGGLE = '0',
 };
 
 #if CONFIG_BT_NUS
-
-#define COMMAND_REQUEST_MULTICAST 'm'
-
-static void on_nus_received(struct bt_conn* conn, const uint8_t* const data, uint16_t len)
-{
-    LOG_INF("Received data: %c", data[0]);
-
-    switch (*data) {
-    case COMMAND_REQUEST_MULTICAST:
-        coap_client_toggle_mesh_light_0();
-        break;
-
-    default:
-        LOG_WRN("Received invalid data from NUS");
-    }
-}
 
 static void on_ble_connect(struct k_work* item)
 {
@@ -106,7 +92,11 @@ static void on_light_request(uint8_t command)
 
     switch (command) {
     case THREAD_COAP_UTILS_LIGHT_0_CMD_TOGGLE:
-        led_0_staus = !led_0_staus;
+        if (led_0_staus == 0) {
+            led_0_staus = 1;
+        } else {
+            led_0_staus = 0;
+        }
         dk_set_led(LIGHT_LED, led_0_staus);
         break;
 
@@ -137,7 +127,7 @@ int main(void)
 
 #if CONFIG_BT_NUS
     struct bt_nus_cb nus_clbs = {
-        .received = on_nus_received,
+        .received = NULL,
         .sent = NULL,
     };
 

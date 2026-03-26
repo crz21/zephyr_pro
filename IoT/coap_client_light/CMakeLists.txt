@@ -15,3 +15,4 @@ target_sources(app PRIVATE src/coap_client_light.c src/coap_client_utils.c)
 # NORDIC SDK APP END
 
 target_sources_ifdef(CONFIG_BT_NUS app PRIVATE src/ble_utils.c)
+target_include_directories(app PRIVATE src)

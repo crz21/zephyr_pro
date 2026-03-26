@@ -35,7 +35,7 @@ typedef void (*mtd_mode_toggle_cb_t)(uint32_t val);
 
 /** @brief Initialize CoAP client utilities.
  */
-void coap_client_utils_init(ot_connection_cb_t on_connect,
+int coap_client_utils_init(ot_connection_cb_t on_connect,
 			    ot_disconnection_cb_t on_disconnect,
 			    mtd_mode_toggle_cb_t on_toggle);
 

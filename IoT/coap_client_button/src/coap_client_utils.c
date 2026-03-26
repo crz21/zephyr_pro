@@ -9,11 +9,11 @@
 #include <zephyr/net/socket.h>
 #include <openthread.h>
 #include <openthread/thread.h>
+#include <openthread/coap.h>
 
 #include "coap_client_utils.h"
-LOG_MODULE_REGISTER(coap_client_utils, CONFIG_COAP_CLIENT_UTILS_LOG_LEVEL);
 
-#define RESPONSE_POLL_PERIOD 100
+LOG_MODULE_REGISTER(coap_client_utils, CONFIG_COAP_CLIENT_UTILS_LOG_LEVEL);
 
 static bool is_connected;
 
@@ -35,36 +35,45 @@ static struct k_work on_connect_work;
 static struct k_work on_disconnect_work;
 mtd_mode_toggle_cb_t on_mtd_mode_toggle;
 
-/* Options supported by the server */
-static const char *const light_option[] = { LIGHT_URI_PATH, NULL };
-
-/* Thread multicast mesh local address */
-static struct sockaddr_in6 multicast_local_addr = {
-    .sin6_family = AF_INET6,
-    .sin6_port = htons(COAP_PORT),
-    .sin6_addr.s6_addr = {0xff, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                          0x01},
-    .sin6_scope_id = 0U};
-
-/* Variable for storing server address acquiring in provisioning handshake */
-static char unique_local_addr_str[INET6_ADDRSTRLEN];
-static struct sockaddr_in6 unique_local_addr = {.sin6_family = AF_INET6,
-                                                .sin6_port = htons(COAP_PORT),
-                                                .sin6_addr.s6_addr =
-                                                    {
-                                                        0,
-                                                    },
-                                                .sin6_scope_id = 0U};
-
 static void toggle_mesh_light_0(struct k_work* item)
 {
-    static uint8_t command = (uint8_t)THREAD_COAP_UTILS_LIGHT_0_CMD_TOGGLE;
+    otError error = OT_ERROR_NONE;
+    otMessage* message = NULL;
+    otMessageInfo messageInfo;
+    struct otInstance* instance = openthread_get_default_instance();
 
-    ARG_UNUSED(item);
+    memset(&messageInfo, 0, sizeof(messageInfo));
+    otIp6AddressFromString("ff03::1", &messageInfo.mPeerAddr); 
+    messageInfo.mPeerPort = COAP_PORT;
 
-    LOG_INF("Send multicast mesh 'light' request");
-    coap_send_request(COAP_METHOD_PUT, (const struct sockaddr*)&multicast_local_addr, light_option, &command,
-                      sizeof(command), NULL);
+    message = otCoapNewMessage(instance, NULL);
+    if (message == NULL) {
+        goto exit;
+    }
+
+    otCoapMessageInit(message, OT_COAP_TYPE_NON_CONFIRMABLE, OT_COAP_CODE_POST);
+
+    error = otCoapMessageAppendUriPathOptions(message, LIGHT_URI_PATH);
+    if (error != OT_ERROR_NONE) {
+        goto exit;
+    }
+
+    otCoapMessageSetPayloadMarker(message);
+    uint8_t command = THREAD_COAP_UTILS_LIGHT_0_CMD_TOGGLE;
+    error = otMessageAppend(message, &command, sizeof(command));
+    if (error != OT_ERROR_NONE) {
+        goto exit;
+    }
+
+    error = otCoapSendRequest(instance, message, &messageInfo, NULL, NULL);
+
+exit:
+    if (error != OT_ERROR_NONE && message != NULL) {
+        otMessageFree(message);
+        LOG_ERR("Failed to send CoAP request: %d", error);
+    } else {
+        LOG_INF("CoAP multicast request sent successfully");
+    }
 }
 
 static void toggle_minimal_sleepy_end_device(struct k_work* item)
@@ -117,10 +126,18 @@ static void on_thread_state_changed(otChangedFlags flags, void* user_data)
 }
 static struct openthread_state_changed_callback ot_state_chaged_cb = {.otCallback = on_thread_state_changed};
 
-void coap_client_utils_init(ot_connection_cb_t on_connect, ot_disconnection_cb_t on_disconnect,
-                            mtd_mode_toggle_cb_t on_toggle)
+int coap_client_utils_init(ot_connection_cb_t on_connect, ot_disconnection_cb_t on_disconnect,
+                           mtd_mode_toggle_cb_t on_toggle)
 {
+    otError error;
+
     on_mtd_mode_toggle = on_toggle;
+    struct otInstance* instance = openthread_get_default_instance();
+    if (!instance) {
+        LOG_ERR("There is no valid OpenThread instance");
+        error = OT_ERROR_FAILED;
+        goto end;
+    }
 
     coap_init(AF_INET6, NULL);
 
@@ -139,6 +156,15 @@ void coap_client_utils_init(ot_connection_cb_t on_connect, ot_disconnection_cb_t
         k_work_init(&toggle_MTD_SED_work, toggle_minimal_sleepy_end_device);
         update_device_state();
     }
+
+    error = otCoapStart(instance, COAP_PORT);
+    if (error != OT_ERROR_NONE) {
+        LOG_ERR("Failed to start OT CoAP. Error: %d", error);
+        goto end;
+    }
+
+end:
+    return error == OT_ERROR_NONE ? 0 : 1;
 }
 
 static void submit_work_if_connected(struct k_work* work)
