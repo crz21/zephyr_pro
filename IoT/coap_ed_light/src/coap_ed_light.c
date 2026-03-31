@@ -14,6 +14,7 @@
 #include <zephyr/pm/device.h>
 
 #include "ble_utils.h"
+#include "coap_client_list"
 #include "coap_client_utils.h"
 
 LOG_MODULE_REGISTER(coap_server, CONFIG_COAP_SERVER_LOG_LEVEL);
@@ -115,7 +116,7 @@ int main(void)
 
     init_list_storage();
 
-    list_init();
+    // coap_list_init();
 
     ret = dk_buttons_init(on_button_changed);
     if (ret) {
@@ -146,7 +147,9 @@ int main(void)
     k_timer_init(&provisioning_timer, on_provisioning_timer_expiry, NULL);
     k_timer_start(&provisioning_timer, K_SECONDS(1000), K_NO_WAIT);
 
-    coap_client_utils_init(on_light_request, on_ot_connect, on_ot_disconnect, on_mtd_mode_toggle);
+    coap_client_utils_init();
+    coap_list_init(network_formation_request_callback_t on_network_formation_request);
+    coap_light_init(network_formation_request_callback_t on_network_formation_request);
 
     return 0;
 }

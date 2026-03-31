@@ -3,7 +3,6 @@
  *
  * SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
  */
-
 #include <dk_buttons_and_leds.h>
 #include <ram_pwrdn.h>
 #include <zephyr/device.h>
@@ -11,8 +10,8 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/device.h>
 
-#include "coap_client_utils.h"
 #include "ble_utils.h"
+#include "coap_client_utils.h"
 #include "list.h"
 
 LOG_MODULE_REGISTER(coap_client, CONFIG_COAP_CLIENT_LOG_LEVEL);
@@ -21,20 +20,29 @@ LOG_MODULE_REGISTER(coap_client, CONFIG_COAP_CLIENT_LOG_LEVEL);
 #define BLE_CONNECTION_LED DK_LED2
 #define MTD_SED_LED DK_LED3
 
+static struct k_work_q coap_client_workq;
+static struct k_work on_connect_work;
+static struct k_work on_disconnect_work;
+static struct k_work multicast_light_work;
+static struct k_work toggle_mtd_sed_work;
+
+#define COAP_CLIENT_WORKQ_STACK_SIZE 2048
+#define COAP_CLIENT_WORKQ_PRIORITY 5
+K_THREAD_STACK_DEFINE(coap_client_workq_stack_area, COAP_CLIENT_WORKQ_STACK_SIZE);
+
 #if CONFIG_BT_NUS
-
-static void on_ble_connect(struct k_work *item)
+static void on_ble_connect(struct k_work* item)
 {
-	ARG_UNUSED(item);
+    ARG_UNUSED(item);
 
-	dk_set_led_on(BLE_CONNECTION_LED);
+    dk_set_led_on(BLE_CONNECTION_LED);
 }
 
-static void on_ble_disconnect(struct k_work *item)
+static void on_ble_disconnect(struct k_work* item)
 {
-	ARG_UNUSED(item);
+    ARG_UNUSED(item);
 
-	dk_set_led_off(BLE_CONNECTION_LED);
+    dk_set_led_off(BLE_CONNECTION_LED);
 }
 
 #endif /* CONFIG_BT_NUS */
@@ -76,11 +84,22 @@ static void on_button_changed(uint32_t button_state, uint32_t has_changed)
     uint32_t buttons = button_state & has_changed;
 
     if (buttons & DK_BTN2_MSK) {
-        coap_client_toggle_mesh_lights();
+        k_work_submit_to_queue(&coap_client_workq, &multicast_light_work);
     }
 
     if (buttons & DK_BTN3_MSK) {
-        coap_client_toggle_minimal_sleepy_end_device();
+        if (IS_ENABLED(CONFIG_OPENTHREAD_MTD_SED)) {
+            k_work_submit_to_queue(&coap_client_workq, &toggle_mtd_sed_work);
+        }
+    }
+}
+
+void ot_connect_statue(bool statue)
+{
+    if (true) {
+        k_work_submit_to_queue(&coap_client_workq, &on_connect_work);
+    } else {
+        k_work_submit_to_queue(&coap_client_workq, &on_disconnect_work);
     }
 }
 
@@ -90,6 +109,17 @@ int main(void)
 
     if (IS_ENABLED(CONFIG_RAM_POWER_DOWN_LIBRARY)) {
         power_down_unused_ram();
+    }
+
+    k_work_queue_init(&coap_client_workq);
+    k_work_queue_start(&coap_client_workq, coap_client_workq_stack_area,
+                       K_THREAD_STACK_SIZEOF(coap_client_workq_stack_area), COAP_CLIENT_WORKQ_PRIORITY, NULL);
+    k_work_init(&on_connect_work, on_ot_connect);
+    k_work_init(&on_disconnect_work, on_ot_disconnect);
+    k_work_init(&multicast_light_work, toggle_mesh_light_0);
+    if (IS_ENABLED(CONFIG_OPENTHREAD_MTD_SED)) {
+        k_work_init(&toggle_mtd_sed_work, toggle_minimal_sleepy_end_device);
+        update_device_state();
     }
 
     ret = dk_buttons_init(on_button_changed);
@@ -117,8 +147,9 @@ int main(void)
     }
 
 #endif /* CONFIG_BT_NUS */
+
     init_list_storage();
-    coap_client_utils_init(on_ot_connect, on_ot_disconnect, on_mtd_mode_toggle);
+    coap_client_utils_init(on_mtd_mode_toggle);
 
     return 0;
 }

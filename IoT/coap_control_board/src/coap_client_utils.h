@@ -13,41 +13,13 @@
 #ifndef __COAP_CLIENT_UTILS_H__
 #define __COAP_CLIENT_UTILS_H__
 
-/** @brief Type indicates function called when OpenThread connection
- *         is established.
- *
- * @param[in] item pointer to work item.
- */
-typedef void (*ot_connection_cb_t)(struct k_work *item);
-
-/** @brief Type indicates function called when OpenThread connection is ended.
- *
- * @param[in] item pointer to work item.
- */
-typedef void (*ot_disconnection_cb_t)(struct k_work *item);
-
-/** @brief Type indicates function called when the MTD modes are toggled.
- *
- * @param[in] val 1 if the MTD is in MED mode
- *                0 if the MTD is in SED mode
- */
 typedef void (*mtd_mode_toggle_cb_t)(uint32_t val);
 
-/** @brief Initialize CoAP client utilities.
- */
-int coap_client_utils_init(ot_connection_cb_t on_connect,
-			    ot_disconnection_cb_t on_disconnect,
-			    mtd_mode_toggle_cb_t on_toggle);
+int coap_client_utils_init(mtd_mode_toggle_cb_t on_toggle);
 
-/** @brief Toggle lights on all CoAP servers in the network mesh.
- */
-void coap_client_toggle_mesh_lights(void);
-
-/** @brief Toggle SED to MED and MED to SED modes.
- *
- * @note Active when the device is working as Minimal Thread Device.
- */
-void coap_client_toggle_minimal_sleepy_end_device(void);
+void toggle_mesh_light_0(struct k_work* item);
+void toggle_minimal_sleepy_end_device(struct k_work* item);
+void update_device_state(void);
 
 #endif
 

@@ -160,8 +160,7 @@
 #define NVS_PARTITION_ID FIXED_PARTITION_ID(storage_partition)
 #define LIST_STORAGE_ID 1
 #define MAX_LIST_ENTRIES 100
-
-
+bool search_addr_timer_flag = 1;
 struct device_entry {
     uint8_t mac[8];        // 固定的 MAC 地址 (Extended Address)
     struct in6_addr ipv6;  // 动态的 IPv6 地址
@@ -237,7 +236,8 @@ static int register_handler(struct coap_resource* res, struct coap_packet* pkt, 
     return coap_reply_ack(res, pkt, from, addrlen);
 }
 
-bool is_authorized(const struct in6_addr *target_ip) {
+bool is_authorized(const struct in6_addr* target_ip)
+{
     for (int i = 0; i < MAX_DEV_COUNT; i++) {
         if (whitelist[i].is_active && net_ipv6_addr_cmp(&whitelist[i].ipv6, target_ip)) {
             return true;
@@ -245,3 +245,75 @@ bool is_authorized(const struct in6_addr *target_ip) {
     }
     return false;
 }
+
+static int on_provisioning_reply(const struct coap_packet* response, struct coap_reply* reply,
+                                 const struct sockaddr* from)
+{
+    int ret = 0;
+    const uint8_t* payload;
+    uint16_t payload_size = 0u;
+
+    ARG_UNUSED(reply);
+    ARG_UNUSED(from);
+
+    payload = coap_packet_get_payload(response, &payload_size);
+
+    if (payload == NULL || payload_size != sizeof(unique_local_addr.sin6_addr)) {
+        LOG_ERR("Received data is invalid");
+        ret = -EINVAL;
+        goto exit;
+    }
+
+    memcpy(&unique_local_addr.sin6_addr, payload, payload_size);
+
+    if (!zsock_inet_ntop(AF_INET6, payload, unique_local_addr_str, INET6_ADDRSTRLEN)) {
+        LOG_ERR("Received data is not IPv6 address: %d", errno);
+        ret = -errno;
+        goto exit;
+    }
+
+    LOG_INF("Received peer address: %s", unique_local_addr_str);
+
+exit:
+    if (IS_ENABLED(CONFIG_OPENTHREAD_MTD_SED)) {
+        poll_period_restore();
+    }
+
+    return ret;
+}
+
+static void send_provisioning_request(struct k_work* item)
+{
+    ARG_UNUSED(item);
+
+    if (IS_ENABLED(CONFIG_OPENTHREAD_MTD_SED)) {
+        /* decrease the polling period for higher responsiveness */
+        poll_period_response_set();
+    }
+
+    LOG_INF("Send 'provisioning' request");
+
+    coap_send_request(COAP_METHOD_GET, (const struct sockaddr*)&multicast_local_addr, provisioning_option, NULL, 0u,
+                      on_provisioning_reply);
+}
+
+void search_addr_handle(void)
+{
+    k_timer_stop(&search_addr_timer);
+    k_timer_stop(&send_provisioning_request_timer);
+}
+
+void list_thread(void)
+{
+    k_timer_start(&search_addr_timer, K_MSEC(180000), K_NO_WAIT);
+    k_timer_start(&send_provisioning_request_timer, K_MSEC(1000), K_NO_WAIT);
+    for (;;) {
+        if (setting_flag == 1) {
+            if (setting_ok_flag == 1) {
+            }
+        }
+    }
+}
+K_TIMER_DEFINE(search_addr_timer, search_addr_handle, NULL);
+K_TIMER_DEFINE(send_provisioning_request_timer, send_provisioning_request, NULL);
+K_THREAD_DEFINE(list_thread_id, 1024, list_thread, NULL, NULL, NULL, LIST_PRIORITY);
