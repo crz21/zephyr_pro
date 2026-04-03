@@ -42,3 +42,12 @@
 &usbd {
 	status = "disabled";
 };
+
+&flash0 {
+    partitions {
+        storage_partition: partition@f8000 {
+            label = "storage";
+            reg = <0x000f8000 0x00008000>; // 示例：从 992KB 开始，大小 32KB
+        };
+    };
+};

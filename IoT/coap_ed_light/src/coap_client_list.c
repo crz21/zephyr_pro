@@ -1,5 +1,5 @@
+#include <string.h>
 #include <zephyr/net/net_ip.h>
-
 // static struct k_timer send_param_timer;
 
 // #define UNPAIRED (0)
@@ -20,11 +20,12 @@
 // static local_ip6_addr[16];
 
 struct list_context {
+    struct otInstance* ot;
     bool network_formation_enabled;
     network_formation_request_callback_t on_network_formation_request;
 };
 
-static struct list_context list_cxt = {false, NULL};
+static struct list_context list_cxt = {NULL, false, NULL};
 
 static otError network_formation_response_send(otMessage* request_message, const otMessageInfo* message_info)
 {
@@ -33,9 +34,7 @@ static otError network_formation_response_send(otMessage* request_message, const
     const void* payload;
     uint16_t payload_size;
 
-    struct otInstance* context_ot = openthread_get_default_instance();
-
-    response = otCoapNewMessage(scontext_ot, NULL);
+    response = otCoapNewMessage(list_cxt.ot, NULL);
     if (response == NULL) {
         goto end;
     }
@@ -53,9 +52,9 @@ static otError network_formation_response_send(otMessage* request_message, const
         goto end;
     }
 
-    memcpy(payload, otThreadGetMeshLocalEid(context_ot), sizeof(otIp6Address));
+    memcpy(payload, otThreadGetMeshLocalEid(list_cxt.ot), sizeof(otIp6Address));
     payload_size = sizeof(otIp6Address);
-    memcpy(payload + payload_size, otLinkGetExtendedAddress(context_ot), sizeof(otExtAddress));
+    memcpy(payload + payload_size, otLinkGetExtendedAddress(list_cxt.ot), sizeof(otExtAddress));
     payload_size += sizeof(otExtAddress);
 
     error = otMessageAppend(response, payload, payload_size);
@@ -63,7 +62,7 @@ static otError network_formation_response_send(otMessage* request_message, const
         goto end;
     }
 
-    error = otCoapSendResponse(context_ot, response, message_info);
+    error = otCoapSendResponse(list_cxt.ot, response, message_info);
 
     LOG_HEXDUMP_INF(payload, payload_size, "Sent network_formation response:");
 
@@ -100,12 +99,27 @@ void network_formation_request_handler(void* context, otMessage* message, const 
         if (error == OT_ERROR_NONE) {
             list_cxt.on_network_formation_request();
             list_cxt.network_formation_enabled = false;
+        } else {
+            read_ip_addr()
         }
     }
 }
 
 void coap_list_init(network_formation_request_callback_t on_network_formation_request)
 {
+    uint8_t nvs_ip_addr[sizeof(otIp6Address)] = {0};
+    uint8_t nvs_ip_addr[sizeof(otIp6Address)] = {0};
+
+    list_cxt.ot = openthread_get_default_instance();
+    read_ip_addr(nvs_ip_addr, sizeof(otIp6Address));
+
+    memcpy(payload, otThreadGetMeshLocalEid(list_cxt.ot), sizeof(otIp6Address));
+
+    if (memcmp(nvs_ip_addr, )) {
+    } else {
+    }
+
+    payload_size = sizeof(otIp6Address);
     list_cxt.network_formation_enabled = false;
     list_cxt.on_network_formation_request = on_network_formation_request;
 }

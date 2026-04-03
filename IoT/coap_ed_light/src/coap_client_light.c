@@ -16,10 +16,7 @@ struct light_context {
     light_request_callback_t on_light_request;
 };
 
-static struct light_context light_cxt = {
-    .ot = NULL,
-    .on_light_request = NULL,
-};
+static struct light_context light_cxt = {NULL, NULL};
 
 #define COAP_CLIENT_WORKQ_STACK_SIZE 2048
 #define COAP_CLIENT_WORKQ_PRIORITY 5

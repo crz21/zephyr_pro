@@ -16,6 +16,7 @@
 #include "ble_utils.h"
 #include "coap_client_list"
 #include "coap_client_utils.h"
+#include "user_nvs.h"
 
 LOG_MODULE_REGISTER(coap_server, CONFIG_COAP_SERVER_LOG_LEVEL);
 
@@ -27,7 +28,8 @@ LOG_MODULE_REGISTER(coap_server, CONFIG_COAP_SERVER_LOG_LEVEL);
 enum light_command {
     THREAD_COAP_UTILS_LIGHT_0_CMD_TOGGLE = '0',
 };
-
+network_formation_request_callback_t on_network_formation_request;
+network_formation_request_callback_t on_network_formation_request;
 #if CONFIG_BT_NUS
 
 static void on_ble_connect(struct k_work* item)
@@ -116,8 +118,6 @@ int main(void)
 
     init_list_storage();
 
-    // coap_list_init();
-
     ret = dk_buttons_init(on_button_changed);
     if (ret) {
         LOG_ERR("Cannot init buttons (error: %d)", ret);
@@ -148,8 +148,9 @@ int main(void)
     k_timer_start(&provisioning_timer, K_SECONDS(1000), K_NO_WAIT);
 
     coap_client_utils_init();
-    coap_list_init(network_formation_request_callback_t on_network_formation_request);
-    coap_light_init(network_formation_request_callback_t on_network_formation_request);
+
+    // coap_list_init(on_network_formation_request);
+    // coap_client_light_init(on_network_formation_request);
 
     return 0;
 }
