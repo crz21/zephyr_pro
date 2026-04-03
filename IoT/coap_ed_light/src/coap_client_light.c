@@ -70,6 +70,7 @@ static void coap_default_handler(void* context, otMessage* message, const otMess
     LOG_INF(
         "Received CoAP message that does not match any request "
         "or resource");
+        
 }
 
 static void toggle_minimal_sleepy_end_device(struct k_work* item)
