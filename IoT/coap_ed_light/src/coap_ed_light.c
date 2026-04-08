@@ -29,7 +29,7 @@ enum light_command {
     THREAD_COAP_UTILS_LIGHT_0_CMD_TOGGLE = '0',
 };
 network_formation_request_callback_t on_network_formation_request;
-network_formation_request_callback_t on_network_formation_request;
+// network_formation_request_callback_t on_network_formation_request;
 #if CONFIG_BT_NUS
 
 static void on_ble_connect(struct k_work* item)
@@ -149,8 +149,7 @@ int main(void)
 
     coap_client_utils_init();
 
-    // coap_list_init(on_network_formation_request);
-    // coap_client_light_init(on_network_formation_request);
-
+    coap_list_init(on_network_formation_request);
+    coap_client_light_init();
     return 0;
 }

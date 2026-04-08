@@ -97,10 +97,8 @@ void network_formation_request_handler(void* context, otMessage* message, const 
 
         error = network_formation_response_send(message, &msg_info);
         if (error == OT_ERROR_NONE) {
-            list_cxt.on_network_formation_request();
+            // list_cxt.on_network_formation_request();
             list_cxt.network_formation_enabled = false;
-        } else {
-            read_ip_addr()
         }
     }
 }
@@ -108,18 +106,19 @@ void network_formation_request_handler(void* context, otMessage* message, const 
 void coap_list_init(network_formation_request_callback_t on_network_formation_request)
 {
     uint8_t nvs_ip_addr[sizeof(otIp6Address)] = {0};
-    uint8_t nvs_ip_addr[sizeof(otIp6Address)] = {0};
+    uint8_t payload_addr[sizeof(otIp6Address)] = {0};
 
     list_cxt.ot = openthread_get_default_instance();
     read_ip_addr(nvs_ip_addr, sizeof(otIp6Address));
 
-    memcpy(payload, otThreadGetMeshLocalEid(list_cxt.ot), sizeof(otIp6Address));
+    memcpy(payload_addr, otThreadGetMeshLocalEid(list_cxt.ot), sizeof(otIp6Address));
 
-    if (memcmp(nvs_ip_addr, )) {
+    if (1 == memcmp(nvs_ip_addr, payload_addr, , sizeof(otIp6Address))) {
+        write_ip_addr(nvs_ip_addr, sizeof(otIp6Address));
+        list_cxt.network_formation_enabled = true;
     } else {
+        list_cxt.network_formation_enabled = false;
     }
 
-    payload_size = sizeof(otIp6Address);
-    list_cxt.network_formation_enabled = false;
-    list_cxt.on_network_formation_request = on_network_formation_request;
+    // list_cxt.on_network_formation_request = on_network_formation_request;
 }
