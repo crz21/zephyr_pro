@@ -19,6 +19,13 @@ LOG_MODULE_REGISTER(coap_client_utils, CONFIG_COAP_CLIENT_UTILS_LOG_LEVEL);
 #define COAP_PORT 5683
 #define LIGHT_URI_PATH "light"
 
+static const struct gpio_dt_spec leds[] = {
+    GPIO_DT_SPEC_GET(DT_ALIAS(led0), gpios),
+    GPIO_DT_SPEC_GET(DT_ALIAS(led1), gpios),
+    GPIO_DT_SPEC_GET(DT_ALIAS(led2), gpios),
+    GPIO_DT_SPEC_GET(DT_ALIAS(led3), gpios),
+};
+
 struct server_context {
     struct otInstance* ot;
 };
@@ -123,6 +130,18 @@ int coap_client_utils_init(mtd_mode_toggle_cb_t on_toggle)
 
     on_mtd_mode_toggle = on_toggle;
     srv_context.ot = openthread_get_default_instance();
+
+    for (int i = 0; i < 4; i++) {
+        if (!gpio_is_ready_dt(&leds[i])) {
+            return 0;
+        }
+
+        ret = gpio_pin_configure_dt(&leds[i], GPIO_OUTPUT_ACTIVE);
+        if (ret < 0) {
+            return 0;
+        }
+    }
+
     if (!srv_context.ot) {
         LOG_ERR("There is no valid OpenThread instance");
         error = OT_ERROR_FAILED;

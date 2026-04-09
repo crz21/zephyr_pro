@@ -1,8 +1,7 @@
 #ifndef __COAP_CLIENT_BUTTON_H__
 #define __COAP_CLIENT_BUTTON_H__
 
-#include <stdint.h>
-
-void ot_connect_statue(bool statue);
+extern struct KEY_PARAM *g_key_par;
+// void ot_connect_statue(bool statue);
 
 #endif

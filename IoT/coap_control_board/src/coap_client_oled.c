@@ -10,13 +10,6 @@
 #define OLED_SSD1306_NODE DT_NODELABEL(oled_ssd1306)
 const struct i2c_dt_spec oled_ssd1306_spec = I2C_DT_SPEC_GET(OLED_SSD1306_NODE);
 
-uint8_t distance;
-uint8_t sensitivity;
-uint8_t transmitted_power;
-uint8_t oled_light;
-uint16_t oled_close_time;
-uint8_t pre_index;
-
 struct _draw_word_op {
     uint8_t page_offset;
     uint8_t column_offset;
@@ -34,6 +27,47 @@ struct _table_op {
     uint8_t max_page;
     void (*table_operation)();
 };
+
+struct OLED_PARAM {
+    uint16_t oled_close_time;
+    uint8_t distance;
+    uint8_t sensitivity;
+    uint8_t transmitted_power;
+    uint8_t oled_light;
+    uint8_t current_index;
+    uint8_t pre_index;
+    uint8_t key_on;
+    uint8_t add_flag;
+};
+struct OLED_PARAM* oled_par;
+
+enum TABLE_INDEX {
+    WELCOME_PAGE = 0,
+    MAIN_PAGE,
+    SET_PAGE_1,
+    SET_PAGE_2,
+    SET_PAGE_3,
+    SET_PAGE_4,
+    SENSOR_PARAM_PAGE_1,
+    SENSOR_PARAM_PAGE_2,
+    SENSOR_PARAM_PAGE_3,
+    OLED_PARAM_PAGE_1,
+    OLED_PARAM_PAGE_2,
+    VISION_PAGE,
+    SENSOR_PARAM_CONFIRM_PAGE,
+    OLED_PARAM_CONFIRM_PAGE,
+    FATORY_CONFIRM_PAGE,
+    MAX_INDEX,
+};
+
+void draw_welcom_page(void);
+void draw_main_page(void);
+void draw_set_page(void);
+void draw_sensor_param_page(void);
+void draw_oled_param_page(void);
+void draw_vision_page(void);
+void draw_param_confirm_page(void);
+void draw_fatory_confirm_page(void);
 
 struct _draw_word_op welcome_page_op[] = {
     {2, 4, "欢迎使用", 4, &draw_part},
@@ -162,12 +196,10 @@ void oled_clear(void)
 {
     uint8_t page, column;
 
-    for (page = 0; page < (MAX_PAGE / 8); page++)  // page loop
-    {
+    for (page = 0; page < (MAX_PAGE / 8); page++) {
         page_set(page);
         column_set(0);
-        for (column = 0; column < MAX_COLUMN; column++)  // column loop
-        {
+        for (column = 0; column < MAX_COLUMN; column++) {
             oled_send_data(0);
         }
     }
@@ -255,11 +287,11 @@ void draw_welcom_page(void)
 {
     uint8_t i;
 
-    if (pre_index != current_index) {
+    if (oled_par->pre_index != oled_par->current_index) {
         oled_clear();
     }
 
-    pre_index = current_index;
+    oled_par->pre_index = oled_par->current_index;
     for (i = 0; i < sizeof(welcome_page_op) / sizeof(welcome_page_op[0]); i++) {
         welcome_page_op[i].dram_func(welcome_page_op[i].page_offset, welcome_page_op[i].column_offset,
                                      welcome_page_op[i].ptr_word, welcome_page_op[i].word_len);
@@ -272,10 +304,10 @@ void draw_main_page(void)
     uint8_t oled_num[64] = {0};
     uint16_t rec_data;
 
-    if (pre_index != current_index) {
+    if (oled_par->pre_index != oled_par->current_index) {
         oled_clear();
     }
-    pre_index = current_index;
+    oled_par->pre_index = oled_par->current_index;
 
     for (i = 0; i < sizeof(main_page_op) / sizeof(main_page_op[0]); i++) {
         main_page_op[i].dram_func(main_page_op[i].page_offset, main_page_op[i].column_offset, main_page_op[i].ptr_word,
@@ -304,8 +336,8 @@ void draw_set_page(void)
     uint8_t len;
     _draw_word_op* set_page_op;
 
-    min_page = table_op[current_index].min_page;
-    max_page = table_op[current_index].max_page;
+    min_page = table_op[oled_par->current_index].min_page;
+    max_page = table_op[oled_par->current_index].max_page;
 
     if (SET_PAGE_1 == min_page) {
         len = sizeof(set_page1_op) / sizeof(set_page1_op[0]);
@@ -315,16 +347,16 @@ void draw_set_page(void)
         set_page_op = set_page2_op;
     }
 
-    if ((pre_index < min_page) || (pre_index > max_page)) {
+    if ((oled_par->pre_index < min_page) || (oled_par->pre_index > max_page)) {
         oled_clear();
     }
-    pre_index = current_index;
+    oled_par->pre_index = oled_par->current_index;
 
     for (i = 0; i < len * 2 + 1; i += 3) {
         clear_half_part(i, 0, 0, 1);
     }
 
-    draw_half_part((current_index - min_page) * 3, 0, ">", 1);
+    draw_half_part((oled_par->current_index - min_page) * 3, 0, ">", 1);
 
     for (i = 0; i < len; i++) {
         set_page_op[i].dram_func(set_page_op[i].page_offset, set_page_op[i].column_offset, set_page_op[i].ptr_word,
@@ -337,57 +369,57 @@ void draw_sensor_param_page(void)
     uint8_t i;
     uint8_t oled_num[64] = {0};
 
-    if ((pre_index < SENSOR_PARAM_PAGE_1) || (pre_index > SENSOR_PARAM_PAGE_3)) {
+    if ((oled_par->pre_index < SENSOR_PARAM_PAGE_1) || (oled_par->pre_index > SENSOR_PARAM_PAGE_3)) {
         oled_clear();
     }
-    pre_index = current_index;
+    oled_par->pre_index = oled_par->current_index;
 
     for (i = 0; i < sizeof(sensor_param_page_op) / sizeof(sensor_param_page_op[0]) * 2 + 1; i += 3) {
-        if (((current_index - SENSOR_PARAM_PAGE_1) * 3) != i) {
+        if (((oled_par->current_index - SENSOR_PARAM_PAGE_1) * 3) != i) {
             clear_half_part(i, 0, 0, 1);
         }
     }
 
-    draw_half_part((current_index - SENSOR_PARAM_PAGE_1) * 3, 0, ">", 1);
+    draw_half_part((oled_par->current_index - SENSOR_PARAM_PAGE_1) * 3, 0, ">", 1);
     for (i = 0; i < sizeof(sensor_param_page_op) / sizeof(sensor_param_page_op[0]); i++) {
         sensor_param_page_op[i].dram_func(sensor_param_page_op[i].page_offset, sensor_param_page_op[i].column_offset,
                                           sensor_param_page_op[i].ptr_word, sensor_param_page_op[i].word_len);
     }
 
-    if (add_flag) {
-        switch (current_index) {
+    if (oled_par->add_flag) {
+        switch (oled_par->current_index) {
         case SENSOR_PARAM_PAGE_1:
-            distance++;
-            if (200 <= distance) {
-                distance = 0;
+            oled_par->distance++;
+            if (200 <= oled_par->distance) {
+                oled_par->distance = 0;
             }
             break;
 
         case SENSOR_PARAM_PAGE_2:
-            sensitivity++;
-            if (100 <= sensitivity) {
-                sensitivity = 0;
+            oled_par->sensitivity++;
+            if (100 <= oled_par->sensitivity) {
+                oled_par->sensitivity = 0;
             }
             break;
 
         case SENSOR_PARAM_PAGE_3:
-            transmitted_power++;
-            if (200 <= transmitted_power) {
-                transmitted_power = 0;
+            oled_par->transmitted_power++;
+            if (200 <= oled_par->transmitted_power) {
+                oled_par->transmitted_power = 0;
             }
             break;
 
         default:
             break;
         }
-        add_flag = 0;
+        oled_par->add_flag = 0;
     }
 
-    val_to_str(distance, oled_num);
+    val_to_str(oled_par->distance, oled_num);
     draw_half_words(0, 10, oled_num, 4);
-    val_to_str(sensitivity, oled_num);
+    val_to_str(oled_par->sensitivity, oled_num);
     draw_half_words(3, 10, oled_num, 4);
-    val_to_str(transmitted_power, oled_num);
+    val_to_str(oled_par->transmitted_power, oled_num);
     draw_half_words(6, 10, oled_num, 4);
 }
 
@@ -396,81 +428,81 @@ void draw_oled_param_page(void)
     uint8_t i;
     uint8_t oled_num[64] = {0};
 
-    if ((pre_index < OLED_PARAM_PAGE_1) || (pre_index > OLED_PARAM_PAGE_2)) {
+    if ((oled_par->pre_index < OLED_PARAM_PAGE_1) || (oled_par->pre_index > OLED_PARAM_PAGE_2)) {
         oled_clear();
     }
 
-    pre_index = current_index;
+    oled_par->pre_index = oled_par->current_index;
 
     for (i = 0; i < (sizeof(oled_param_page_op) / sizeof(oled_param_page_op[0])) * 2 + 1; i += 3) {
-        if (((current_index - OLED_PARAM_PAGE_1) * 3) != i) {
+        if (((oled_par->current_index - OLED_PARAM_PAGE_1) * 3) != i) {
             clear_half_part(i, 0, 0, 1);
         }
     }
 
-    draw_half_part((current_index - OLED_PARAM_PAGE_1) * 3, 0, ">", 1);
+    draw_half_part((oled_par->current_index - OLED_PARAM_PAGE_1) * 3, 0, ">", 1);
     for (i = 0; i < sizeof(oled_param_page_op) / sizeof(oled_param_page_op[0]); i++) {
         oled_param_page_op[i].dram_func(oled_param_page_op[i].page_offset, oled_param_page_op[i].column_offset,
                                         oled_param_page_op[i].ptr_word, oled_param_page_op[i].word_len);
     }
 
-    if (add_flag) {
-        switch (current_index) {
+    if (oled_par->add_flag) {
+        switch (oled_par->current_index) {
         case OLED_PARAM_PAGE_1:
-            oled_light++;
-            if (255 <= oled_light) {
-                oled_light = 0;
+            oled_par->oled_light++;
+            if (255 <= oled_par->oled_light) {
+                oled_par->oled_light = 0;
             }
             break;
 
         case OLED_PARAM_PAGE_2:
-            oled_close_time++;
-            if (999 <= oled_close_time) {
-                oled_close_time = 0;
+            oled_par->oled_close_time++;
+            if (999 <= oled_par->oled_close_time) {
+                oled_par->oled_close_time = 0;
             }
             break;
 
         default:
             break;
         }
-        add_flag = 0;
+        oled_par->add_flag = 0;
     }
 
-    val_to_str(oled_light, oled_num);
+    val_to_str(oled_par->oled_light, oled_num);
     draw_half_words(0, 10, oled_num, 4);
-    val_to_str(oled_close_time, oled_num);
+    val_to_str(oled_par->oled_close_time, oled_num);
     draw_half_words(3, 10, oled_num, 4);
 }
 
 void draw_vision_page(void)
 {
-    if (pre_index != current_index) {
+    if (oled_par->pre_index != oled_par->current_index) {
         oled_clear();
     }
 
-    pre_index = current_index;
+    oled_par->pre_index = oled_par->current_index;
     draw_part(3, 2, "版本号", 3);
     draw_half_part(3, 8, ":V1.0", 5);
 }
 
 void draw_param_confirm_page(void)
 {
-    if (pre_index != current_index) {
+    if (oled_par->pre_index != oled_par->current_index) {
         oled_clear();
     }
 
-    pre_index = current_index;
+    oled_par->pre_index = oled_par->current_index;
     draw_part(3, 2, "确定更改参数", 6);
     draw_half_part(3, 14, "?", 1);
 }
 
 void draw_fatory_confirm_page(void)
 {
-    if (pre_index != current_index) {
+    if (oled_par->pre_index != oled_par->current_index) {
         oled_clear();
     }
 
-    pre_index = current_index;
+    oled_par->pre_index = oled_par->current_index;
     draw_part(3, 2, "确认恢复默认", 6);
     draw_half_part(3, 14, "?", 1);
 }
@@ -523,7 +555,7 @@ void oled_thread(void)
     oled_init();
 
     for (;;) {
-        table_op[current_index].table_operation();
+        table_op[oled_par->current_index].table_operation();
     }
 }
 K_THREAD_DEFINE(oled_thread_id, 1024, oled_thread, NULL, NULL, NULL, OLED_SSD1306_PRIORITY, 0, 0);
