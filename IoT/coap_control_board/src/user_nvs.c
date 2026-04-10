@@ -28,7 +28,7 @@ static struct _param g_param[DEVICE_PARAM_NUM] = {
     {0, 0, 100},         //
     {0, 0, 100},         //
 };
-
+#define CONFIG_ID (1)
 static struct nvs_fs fs;
 
 static void save_parameter(uint8_t* buf, uint16_t len) { nvs_write(&fs, CONFIG_ID, buf, len); }
