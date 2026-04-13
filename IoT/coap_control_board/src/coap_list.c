@@ -172,17 +172,17 @@ static struct device_entry whitelist[MAX_DEV_COUNT];
 static struct nvs_fs fs;
 
 // 初始化 NVS 存储
-int init_list_storage(void)
-{
-    struct flash_pages_info info;
-    fs.flash_device = DEVICE_DT_GET(DT_CHOSEN(zephyr_flash_controller));
-    fs.offset = DT_REG_ADDR(DT_NODE_BY_FIXED_PARTITION_ID(NVS_PARTITION_ID));
-    flash_get_page_info_by_offs(fs.flash_device, fs.offset, &info);
-    fs.sector_size = info.size;
-    fs.sector_count = 3;
+// int init_list_storage(void)
+// {
+//     struct flash_pages_info info;
+//     fs.flash_device = DEVICE_DT_GET(DT_CHOSEN(zephyr_flash_controller));
+//     fs.offset = DT_REG_ADDR(DT_NODE_BY_FIXED_PARTITION_ID(NVS_PARTITION_ID));
+//     flash_get_page_info_by_offs(fs.flash_device, fs.offset, &info);
+//     fs.sector_size = info.size;
+//     fs.sector_count = 3;
 
-    return nvs_mount(&fs);
-}
+//     return nvs_mount(&fs);
+// }
 
 /**
  * @brief 更新或添加设备到白名单

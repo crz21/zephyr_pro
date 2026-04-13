@@ -13,11 +13,11 @@ project(openthread_coap_client_button)
 target_sources(app PRIVATE src/coap_client_button.c 
 src/coap_client_oled.c 
 src/main.c 
-src/user_nvs.c 
 src/font_table.c)
 target_include_directories(app PRIVATE src)
 # NORDIC SDK APP END
 
 target_sources_ifdef(CONFIG_BT_NUS app PRIVATE src/ble_utils.c)
 target_sources_ifdef(CONFIG_COAP app PRIVATE src/coap_client_utils.c src/coap_list.c)
+target_sources_ifdef(CONFIG_FLASH app PRIVATE src/user_nvs.c )
 

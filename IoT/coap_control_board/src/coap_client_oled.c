@@ -1,18 +1,20 @@
+
+
 #include <stdint.h>
+#include <stdio.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/kernel.h>
 
+#include "coap_client_oled.h"
 #include "coap_client_button.h"
 #include "font_table.h"
-#include "coap_client_oled.h"
-#include <stdio.h>
 
-#define OLED_SSD1306_PRIORITY (3)
+#define OLED_SSD1306_PRIORITY (5)
 #define MAX_COLUMN (128)      // 最大列数
 #define MAX_PAGE (64)         // 最大行数 1个page代表8小行所以为 64 / 8
 #define MAX_COLUMN_WORDS (8)  // 一行最大显示字数
 
-#define OLED_SSD1306_NODE DT_NODELABEL(oled_ssd1306)
+#define OLED_SSD1306_NODE DT_NODELABEL(gen_oled_ssd1306)
 const struct i2c_dt_spec oled_ssd1306_spec = I2C_DT_SPEC_GET(OLED_SSD1306_NODE);
 
 struct _draw_word_op {
@@ -22,8 +24,6 @@ struct _draw_word_op {
     uint8_t word_len;
     void (*dram_func)(uint8_t, uint8_t, char*, uint8_t);
 };
-
-
 
 struct _oled_param oled_par;
 
@@ -38,42 +38,42 @@ void draw_fatory_confirm_page(void);
 void draw_part(uint8_t page_offset, uint8_t column_offset, char* str, uint8_t word_len);
 
 struct _draw_word_op welcome_page_op[] = {
-    {2, 4, "欢迎使用", 4, &draw_part},
-    {5, 3, "请按确认键", 5, &draw_part},
+    {2, 4, "\xBB\xB6\xD3\xAD\xCA\xB9\xD3\xC3", 4, &draw_part}, // 欢迎使用
+    {5, 3, "\xC7\xEB\xB0\xB4\xC8\xB7\xC8\xCF\xBC\xFC", 5, &draw_part}, // 请按确认键
 };
 
 struct _draw_word_op main_page_op[] = {
-    {0, 0, "状态", 2, &draw_part},
-    {3, 0, "有人距离", 4, &draw_part},
-    {6, 0, "无人距离", 4, &draw_part},
+    {0, 0, "\xD7\xB4\xCC\xAC", 2, &draw_part}, // 状态
+    {3, 0, " \xD3\xD0\xC8\xCB\xBE\xE0\xC0\xEB", 4, &draw_part}, // 有人距离
+    {6, 0, "\xCE\xDE\xC8\xCB\xBE\xE0\xC0\xEB", 4, &draw_part}, // 无人距离
 };
 
 struct _draw_word_op set_page1_op[] = {
-    {0, 1, "参数设置", 4, &draw_part},
-    {3, 1, "屏幕设置", 4, &draw_part},
-    {6, 1, "版本", 2, &draw_part},
+    {0, 1, "\xB6\xC8\xC3\xBB\xC9\xE8\xD6\xC3", 4, &draw_part}, // 参数设置
+    {3, 1, "\xC6\xC1\xC4\xBB\xC9\xE8\xD6\xC3", 4, &draw_part}, // 屏幕设置
+    {6, 1, "\xB0\xE6\xB1\xBE", 2, &draw_part}, // 版本
 };
 
 struct _draw_word_op set_page2_op[] = {
-    {0, 1, "恢复默认", 4, &draw_part},
+    {0, 1, "\xBB\xD6\xB8\xB4\xC4\xAC\xC8\xCF", 4, &draw_part}, // 恢复默认
 };
 
 struct _draw_word_op sensor_param_page_op[] = {
-    {0, 1, "距离", 2, &draw_part},
-    {3, 1, "灵敏度", 3, &draw_part},
-    {6, 1, "发射功率", 4, &draw_part},
+    {0, 1, "\xBE\xE0\xC0\xEB", 2, &draw_part}, // 距离
+    {3, 1, "\xC1\xE9\xC3\xF4\xB6\xC8", 3, &draw_part}, // 灵敏度
+    {6, 1, "\xB7\xA2\xC9\xE4\xB9\xA6\xC2\xCA", 4, &draw_part}, // 发射功率
 };
 
 struct _draw_word_op oled_param_page_op[] = {
-    {0, 1, "亮度", 2, &draw_part},
-    {3, 1, "息屏时间", 4, &draw_part},
+    {0, 1, "\xC1\xC1\xB6\xC8", 2, &draw_part}, // 亮度
+    {3, 1, "\xCF\xA2\xBA\xC5\xCA\xB1\xBC\xE4", 4, &draw_part}, // 息屏时间
 };
 
 struct _draw_word_op param_word_op[] = {
-    {0, 7, "没有目标", 4, &draw_part},
-    {0, 7, "运动目标", 4, &draw_part},
-    {0, 7, "静止目标", 4, &draw_part},
-    {0, 7, "运动静止", 4, &draw_part},
+    {0, 7, "\xC3\xBB\xD3\xD0\xC4\xBF\xB1\xEA", 4, &draw_part}, // 没有目标
+    {0, 7, "\xD4\xCB\xB6\xAF\xC4\xBF\xB1\xEA", 4, &draw_part}, // 运动目标
+    {0, 7, "\xBE\xB2\xD6\xB9\xC4\xBF\xB1\xEA", 4, &draw_part}, // 静止目标
+    {0, 7, "\xD4\xCB\xB6\xAF\xBE\xB2\xD6\xB9", 4, &draw_part}, // 运动静止
 };
 
 struct _table_op table_op[MAX_INDEX] = {
@@ -117,8 +117,13 @@ void oled_send_cmd(uint8_t o_command)
 
     buf[0] = 0;
     buf[1] = o_command;
-    printf("oled_command \n\r");
-    i2c_write_dt(&oled_ssd1306_spec, buf, 2);
+
+    // printk("I2C send cmd\n");
+    int ret = i2c_write_dt(&oled_ssd1306_spec, buf, 2);
+    if (ret != 0) {
+        // 如果这里打印了，说明硬件连接、上拉电阻或地址(0x3D)有问题
+        printk("I2C send cmd failed: %d\n", ret);
+    }
 }
 
 void oled_send_data(uint8_t o_data)
@@ -127,8 +132,13 @@ void oled_send_data(uint8_t o_data)
 
     buf[0] = 0x40;
     buf[1] = o_data;
-    printf("oled_data \n\r");
-    i2c_write_dt(&oled_ssd1306_spec, buf, 2);
+
+    // printk("I2C send data\n");
+    int ret = i2c_write_dt(&oled_ssd1306_spec, buf, 2);
+    if (ret != 0) {
+        // 如果这里打印了，说明硬件连接、上拉电阻或地址(0x3D)有问题
+        printk("I2C send data failed: %d\n", ret);
+    }
 }
 
 void column_set(uint8_t column)
@@ -458,7 +468,7 @@ void draw_vision_page(void)
     }
 
     oled_par.pre_index = oled_par.current_index;
-    draw_part(3, 2, "版本号", 3);
+    draw_part(3, 2, "\xB0\xE6\xB1\xBE\xBA\xC5", 3); // 版本号
     draw_half_part(3, 8, ":V1.0", 5);
 }
 
@@ -469,7 +479,7 @@ void draw_param_confirm_page(void)
     }
 
     oled_par.pre_index = oled_par.current_index;
-    draw_part(3, 2, "确定更改参数", 6);
+    draw_part(3, 2, "\xC8\xB7\xB6\xA8\xB8\xFC\xB8\xC4\xB2\xCE\xCA\xFD", 6); // 确定更改参数
     draw_half_part(3, 14, "?", 1);
 }
 
@@ -480,7 +490,7 @@ void draw_fatory_confirm_page(void)
     }
 
     oled_par.pre_index = oled_par.current_index;
-    draw_part(3, 2, "确认恢复默认", 6);
+    draw_part(3, 2, "\xC8\xB7\xC8\xCF\xBB\xD6\xB8\xB4\xC4\xAC\xC8\xCF", 6); // 确认恢复默认
     draw_half_part(3, 14, "?", 1);
 }
 
@@ -515,11 +525,13 @@ void oled_init(void)
         0xAF,  // 开启显示
     };
 
-    // for (i = 0; i < 25; i++) {
-    //     oled_send_cmd(oled_init_cmd[i]);
-    // }
+    for (i = 0; i < 25; i++) {
+        oled_send_cmd(oled_init_cmd[i]);
+    }
 
     oled_clear();
+
+    printk("oled init!\n");
 }
 
 void oled_thread(void)
@@ -532,13 +544,14 @@ void oled_thread(void)
     oled_init();
 
     for (;;) {
-        
-        // if (oled_par.key_on) 
+        if (oled_par.key_on)
         {
             oled_par.key_on = 0;
+            printf("current_index = %x\n", oled_par.current_index);
             table_op[oled_par.current_index].table_operation();
-            k_msleep(50);
+            
         }
+        k_msleep(50);
     }
 }
-K_THREAD_DEFINE(oled_thread_id, 1024, oled_thread, NULL, NULL, NULL, OLED_SSD1306_PRIORITY, 0, 0);
+K_THREAD_DEFINE(oled_thread_id, 1024, oled_thread, NULL, NULL, NULL, 3, 0, 0);

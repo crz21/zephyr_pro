@@ -2,6 +2,6 @@
 #define __COAP_LIST_H__
 
 #include <stdint.h>
-int init_list_storage(void);
+// int init_list_storage(void);
 
 #endif
