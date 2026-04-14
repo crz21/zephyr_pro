@@ -26,7 +26,7 @@
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-1 = <&i2c0_sleep>;
 	pinctrl-names = "default", "sleep";
-	clock-frequency = <100000>;
+	clock-frequency = <400000>;
 
 	gen_oled_ssd1306: gen_oled_ssd1306@3c {
 		compatible = "gen,ssd1306";
@@ -34,19 +34,16 @@
 		label = "OLED_SSD1306";
 		status = "okay";
 
-		width = <128>;
-		height = <64>;
-		segment-offset = <0>;
-		page-offset = <0>;
-		display-offset = <0>;
-		multiplex-ratio = <63>;
-		segment-remap;
-		com-invdir;
-		prechargep = <0x22>;
+		// width = <128>;
+		// height = <64>;
+		// segment-offset = <0>;
+		// page-offset = <0>;
+		// display-offset = <0>;
+		// multiplex-ratio = <63>;
+		// segment-remap;
+		// com-invdir;
+		// prechargep = <0x22>;
 	};
 };
 
-// &uart0 {
-// 	status = "okay";
-// 	hw-flow-control;
-// };
+

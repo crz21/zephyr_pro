@@ -5,14 +5,16 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/kernel.h>
 
-#include "coap_client_oled.h"
 #include "coap_client_button.h"
 #include "font_table.h"
+#include "coap_client_oled.h"
+#include "includes.h"
 
 #define OLED_SSD1306_PRIORITY (5)
 #define MAX_COLUMN (128)      // 最大列数
 #define MAX_PAGE (64)         // 最大行数 1个page代表8小行所以为 64 / 8
 #define MAX_COLUMN_WORDS (8)  // 一行最大显示字数
+#define ADJUST_VALUE (30)
 
 #define OLED_SSD1306_NODE DT_NODELABEL(gen_oled_ssd1306)
 const struct i2c_dt_spec oled_ssd1306_spec = I2C_DT_SPEC_GET(OLED_SSD1306_NODE);
@@ -38,42 +40,42 @@ void draw_fatory_confirm_page(void);
 void draw_part(uint8_t page_offset, uint8_t column_offset, char* str, uint8_t word_len);
 
 struct _draw_word_op welcome_page_op[] = {
-    {2, 4, "\xBB\xB6\xD3\xAD\xCA\xB9\xD3\xC3", 4, &draw_part}, // 欢迎使用
-    {5, 3, "\xC7\xEB\xB0\xB4\xC8\xB7\xC8\xCF\xBC\xFC", 5, &draw_part}, // 请按确认键
+    {2, 4, "\xBB\xB6\xD3\xAD\xCA\xB9\xD3\xC3", 4, &draw_part},          // 欢迎使用
+    {5, 3, "\xC7\xEB\xB0\xB4\xC8\xB7\xC8\xCF\xBC\xFC", 5, &draw_part},  // 请按确认键
 };
 
 struct _draw_word_op main_page_op[] = {
-    {0, 0, "\xD7\xB4\xCC\xAC", 2, &draw_part}, // 状态
-    {3, 0, " \xD3\xD0\xC8\xCB\xBE\xE0\xC0\xEB", 4, &draw_part}, // 有人距离
-    {6, 0, "\xCE\xDE\xC8\xCB\xBE\xE0\xC0\xEB", 4, &draw_part}, // 无人距离
+    {0, 0, "\xD7\xB4\xCC\xAC", 2, &draw_part},                   // 状态
+    {3, 0, "\xD3\xD0\xC8\xCB\xBE\xE0\xC0\xEB", 4, &draw_part},   // 有人距离
+    {6, 0, "\xCE\xDE\xC8\xCB\xBE\xE0\xC0\xEB", 4, &draw_part},   // 无人距离
 };
 
 struct _draw_word_op set_page1_op[] = {
-    {0, 1, "\xB6\xC8\xC3\xBB\xC9\xE8\xD6\xC3", 4, &draw_part}, // 参数设置
-    {3, 1, "\xC6\xC1\xC4\xBB\xC9\xE8\xD6\xC3", 4, &draw_part}, // 屏幕设置
-    {6, 1, "\xB0\xE6\xB1\xBE", 2, &draw_part}, // 版本
+    {0, 1, "\xB2\xCE\xCA\xFD\xC9\xE8\xD6\xC3", 4, &draw_part},  // 参数设置
+    {3, 1, "\xC6\xC1\xC4\xBB\xC9\xE8\xD6\xC3", 4, &draw_part},  // 屏幕设置
+    {6, 1, "\xB0\xE6\xB1\xBE", 2, &draw_part},                  // 版本
 };
 
 struct _draw_word_op set_page2_op[] = {
-    {0, 1, "\xBB\xD6\xB8\xB4\xC4\xAC\xC8\xCF", 4, &draw_part}, // 恢复默认
+    {0, 1, "\xBB\xD6\xB8\xB4\xC4\xAC\xC8\xCF", 4, &draw_part},  // 恢复默认
 };
 
 struct _draw_word_op sensor_param_page_op[] = {
-    {0, 1, "\xBE\xE0\xC0\xEB", 2, &draw_part}, // 距离
-    {3, 1, "\xC1\xE9\xC3\xF4\xB6\xC8", 3, &draw_part}, // 灵敏度
-    {6, 1, "\xB7\xA2\xC9\xE4\xB9\xA6\xC2\xCA", 4, &draw_part}, // 发射功率
+    {0, 1, "\xBE\xE0\xC0\xEB", 2, &draw_part},                  // 距离
+    {3, 1, "\xC1\xE9\xC3\xF4\xB6\xC8", 3, &draw_part},          // 灵敏度
+    {6, 1, "\xB7\xA2\xC9\xE4\xB9\xA6\xC2\xCA", 4, &draw_part},  // 发射功率
 };
 
 struct _draw_word_op oled_param_page_op[] = {
-    {0, 1, "\xC1\xC1\xB6\xC8", 2, &draw_part}, // 亮度
-    {3, 1, "\xCF\xA2\xBA\xC5\xCA\xB1\xBC\xE4", 4, &draw_part}, // 息屏时间
+    {0, 1, "\xC1\xC1\xB6\xC8", 2, &draw_part},                  // 亮度
+    {3, 1, "\xCF\xA2\xC6\xC1\xCA\xB1\xBC\xE4", 4, &draw_part},  // 息屏时间
 };
 
 struct _draw_word_op param_word_op[] = {
-    {0, 7, "\xC3\xBB\xD3\xD0\xC4\xBF\xB1\xEA", 4, &draw_part}, // 没有目标
-    {0, 7, "\xD4\xCB\xB6\xAF\xC4\xBF\xB1\xEA", 4, &draw_part}, // 运动目标
-    {0, 7, "\xBE\xB2\xD6\xB9\xC4\xBF\xB1\xEA", 4, &draw_part}, // 静止目标
-    {0, 7, "\xD4\xCB\xB6\xAF\xBE\xB2\xD6\xB9", 4, &draw_part}, // 运动静止
+    {0, 7, "\xC3\xBB\xD3\xD0\xC4\xBF\xB1\xEA", 4, &draw_part},  // 没有目标
+    {0, 7, "\xD4\xCB\xB6\xAF\xC4\xBF\xB1\xEA", 4, &draw_part},  // 运动目标
+    {0, 7, "\xBE\xB2\xD6\xB9\xC4\xBF\xB1\xEA", 4, &draw_part},  // 静止目标
+    {0, 7, "\xD4\xCB\xB6\xAF\xBE\xB2\xD6\xB9", 4, &draw_part},  // 运动静止
 };
 
 struct _table_op table_op[MAX_INDEX] = {
@@ -113,30 +115,27 @@ struct _table_op table_op[MAX_INDEX] = {
 
 void oled_send_cmd(uint8_t o_command)
 {
-    uint8_t buf[2] = {0};
+    uint8_t buf[2] = {0, o_command};
 
-    buf[0] = 0;
-    buf[1] = o_command;
-
-    // printk("I2C send cmd\n");
     int ret = i2c_write_dt(&oled_ssd1306_spec, buf, 2);
     if (ret != 0) {
-        // 如果这里打印了，说明硬件连接、上拉电阻或地址(0x3D)有问题
         printk("I2C send cmd failed: %d\n", ret);
     }
 }
 
-void oled_send_data(uint8_t o_data)
+void oled_send_data(uint8_t* o_data, uint16_t o_len)
 {
-    uint8_t buf[2] = {0};
+    uint8_t buf[129] = {0};
+    uint8_t i = 0;
+    uint8_t total_len = o_len + 1;
 
     buf[0] = 0x40;
-    buf[1] = o_data;
+    for (i = 0; i < o_len; i++) {
+        buf[i + 1] = o_data[i];
+    }
 
-    // printk("I2C send data\n");
-    int ret = i2c_write_dt(&oled_ssd1306_spec, buf, 2);
+    int ret = i2c_write_dt(&oled_ssd1306_spec, buf, total_len);
     if (ret != 0) {
-        // 如果这里打印了，说明硬件连接、上拉电阻或地址(0x3D)有问题
         printk("I2C send data failed: %d\n", ret);
     }
 }
@@ -151,43 +150,42 @@ void page_set(uint8_t page) { oled_send_cmd(0xb0 + page); }
 
 void draw_half_words(uint8_t page_offset, uint8_t column_offset, uint8_t* half_word, uint8_t half_word_num)
 {
-    uint8_t page, column, column_word;
+    uint8_t page, column_word;
 
     for (column_word = 0; column_word < half_word_num; column_word++) {
-        for (page = (page_offset); page < (page_offset + 2); page++) {
-            page_set(page);
+        for (page = 0; page < 2; page++) {
+            page_set(page + page_offset);
             column_set(8 * column_word + column_offset * 8);
-            for (column = 0; column < 8; column++) {
-                oled_send_data(*half_word++);
-            }
+            uint8_t* ptr = half_word + (column_word * 16) + (page * 8);
+            oled_send_data(ptr, 8);
         }
     }
 }
 
 void draw_words(uint8_t page_offset, uint8_t column_offset, uint8_t* word, uint8_t word_num)
 {
-    uint8_t page, column, column_word;
+    uint8_t page, column_word;
 
     for (column_word = 0; column_word < word_num; column_word++) {
-        for (page = (page_offset); page < (page_offset + 2); page++) {
-            page_set(page);
+        for (page = 0; page < 2; page++) {
+            page_set(page + page_offset);
             column_set(16 * column_word + column_offset * 8);
-            for (column = 0; column < 16; column++) {
-                oled_send_data(*word++);
-            }
+            uint8_t* ptr = word + (column_word * 32) + (page * 16);
+            oled_send_data(ptr, 16);
         }
     }
 }
 
-void oled_clear(void)
+void clear_oled(void)
 {
     uint8_t page, column;
+    uint8_t buf[MAX_COLUMN] = {0};
 
     for (page = 0; page < (MAX_PAGE / 8); page++) {
         page_set(page);
         column_set(0);
         for (column = 0; column < MAX_COLUMN; column++) {
-            oled_send_data(0);
+            oled_send_data(buf, 1);
         }
     }
 }
@@ -222,9 +220,10 @@ void draw_part(uint8_t page_offset, uint8_t column_offset, char* str, uint8_t wo
 {
     uint8_t strw[512] = {0};
     uint16_t i, j, k;
+    uint16_t total_words = sizeof(gbk_code) / 2;
 
     for (k = 0; k < word_len; k++) {
-        for (i = 0; i < sizeof(gbk_code); i++) {
+        for (i = 0; i < total_words; i++) {
             if (0 == memcmp(str + k * 2, gbk_code + i * 2, 2)) {
                 for (j = 0; j < 32; j++) {
                     strw[k * 32 + j] = font_size_16x16[i * 32 + j];
@@ -275,7 +274,7 @@ void draw_welcom_page(void)
     uint8_t i;
 
     if (oled_par.pre_index != oled_par.current_index) {
-        oled_clear();
+        clear_oled();
     }
 
     oled_par.pre_index = oled_par.current_index;
@@ -284,23 +283,26 @@ void draw_welcom_page(void)
                                      welcome_page_op[i].ptr_word, welcome_page_op[i].word_len);
     }
 }
-
+// uint8_t test_get_buf[30];
 void draw_main_page(void)
 {
-    uint8_t i, sta, j;
+    uint8_t i;
+    // uint8_t sta, j;
     // uint8_t oled_num[64] = {0};
-    uint16_t rec_data;
+    // uint16_t rec_data;
 
     if (oled_par.pre_index != oled_par.current_index) {
-        oled_clear();
+        clear_oled();
     }
+    printf("pre_index:%x current_index%x\n", oled_par.pre_index, oled_par.current_index);
     oled_par.pre_index = oled_par.current_index;
 
     for (i = 0; i < sizeof(main_page_op) / sizeof(main_page_op[0]); i++) {
         main_page_op[i].dram_func(main_page_op[i].page_offset, main_page_op[i].column_offset, main_page_op[i].ptr_word,
                                   main_page_op[i].word_len);
+        printf("page_offset:%x column_offset:%x word_len:%x\n", main_page_op[i].page_offset, main_page_op[i].column_offset, main_page_op[i].word_len);
     }
-
+    
     // sta = test_get_buf[2];
     // param_word_op[sta].dram_func(param_word_op[sta].page_offset, param_word_op[sta].column_offset,
     //                              param_word_op[sta].ptr_word, param_word_op[sta].word_len);
@@ -335,16 +337,16 @@ void draw_set_page(void)
     }
 
     if ((oled_par.pre_index < min_page) || (oled_par.pre_index > max_page)) {
-        oled_clear();
+        clear_oled();
     }
     oled_par.pre_index = oled_par.current_index;
 
     for (i = 0; i < len * 2 + 1; i += 3) {
         clear_half_part(i, 0, 0, 1);
     }
-
+printf("c_page : %d  m_page : %d\n", oled_par.current_index, min_page);
     draw_half_part((oled_par.current_index - min_page) * 3, 0, ">", 1);
-
+printf("page : %d \n", oled_par.current_index - min_page);
     for (i = 0; i < len; i++) {
         set_page_op[i].dram_func(set_page_op[i].page_offset, set_page_op[i].column_offset, set_page_op[i].ptr_word,
                                  set_page_op[i].word_len);
@@ -357,7 +359,7 @@ void draw_sensor_param_page(void)
     uint8_t oled_num[64] = {0};
 
     if ((oled_par.pre_index < SENSOR_PARAM_PAGE_1) || (oled_par.pre_index > SENSOR_PARAM_PAGE_3)) {
-        oled_clear();
+        clear_oled();
     }
     oled_par.pre_index = oled_par.current_index;
 
@@ -416,7 +418,7 @@ void draw_oled_param_page(void)
     uint8_t oled_num[64] = {0};
 
     if ((oled_par.pre_index < OLED_PARAM_PAGE_1) || (oled_par.pre_index > OLED_PARAM_PAGE_2)) {
-        oled_clear();
+        clear_oled();
     }
 
     oled_par.pre_index = oled_par.current_index;
@@ -464,33 +466,33 @@ void draw_oled_param_page(void)
 void draw_vision_page(void)
 {
     if (oled_par.pre_index != oled_par.current_index) {
-        oled_clear();
+        clear_oled();
     }
 
     oled_par.pre_index = oled_par.current_index;
-    draw_part(3, 2, "\xB0\xE6\xB1\xBE\xBA\xC5", 3); // 版本号
+    draw_part(3, 2, "\xB0\xE6\xB1\xBE\xBA\xC5", 3);  // 版本号
     draw_half_part(3, 8, ":V1.0", 5);
 }
 
 void draw_param_confirm_page(void)
 {
     if (oled_par.pre_index != oled_par.current_index) {
-        oled_clear();
+        clear_oled();
     }
 
     oled_par.pre_index = oled_par.current_index;
-    draw_part(3, 2, "\xC8\xB7\xB6\xA8\xB8\xFC\xB8\xC4\xB2\xCE\xCA\xFD", 6); // 确定更改参数
+    draw_part(3, 2, "\xC8\xB7\xB6\xA8\xB8\xFC\xB8\xC4\xB2\xCE\xCA\xFD", 6);  // 确定更改参数
     draw_half_part(3, 14, "?", 1);
 }
 
 void draw_fatory_confirm_page(void)
 {
     if (oled_par.pre_index != oled_par.current_index) {
-        oled_clear();
+        clear_oled();
     }
 
     oled_par.pre_index = oled_par.current_index;
-    draw_part(3, 2, "\xC8\xB7\xC8\xCF\xBB\xD6\xB8\xB4\xC4\xAC\xC8\xCF", 6); // 确认恢复默认
+    draw_part(3, 2, "\xC8\xB7\xC8\xCF\xBB\xD6\xB8\xB4\xC4\xAC\xC8\xCF", 6);  // 确认恢复默认
     draw_half_part(3, 14, "?", 1);
 }
 
@@ -529,9 +531,7 @@ void oled_init(void)
         oled_send_cmd(oled_init_cmd[i]);
     }
 
-    oled_clear();
-
-    printk("oled init!\n");
+    clear_oled();
 }
 
 void oled_thread(void)
@@ -544,14 +544,13 @@ void oled_thread(void)
     oled_init();
 
     for (;;) {
-        if (oled_par.key_on)
-        {
+        k_mutex_lock(&i2c_mutex, K_FOREVER);
+        if (oled_par.key_on) {
             oled_par.key_on = 0;
-            printf("current_index = %x\n", oled_par.current_index);
             table_op[oled_par.current_index].table_operation();
-            
         }
+        k_mutex_unlock(&i2c_mutex);
         k_msleep(50);
     }
 }
-K_THREAD_DEFINE(oled_thread_id, 1024, oled_thread, NULL, NULL, NULL, 3, 0, 0);
+K_THREAD_DEFINE(oled_thread_id, 2048, oled_thread, NULL, NULL, NULL, 3, 0, 0);

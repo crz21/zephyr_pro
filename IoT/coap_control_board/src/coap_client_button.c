@@ -12,11 +12,12 @@
 #include "coap_client_button.h"
 #include "includes.h"
 #include <stdio.h>
+#include "includes.h"
 
 #define ENTER_KEY (0x1)
-#define UP_KEY	  (0x2)
-#define DOWN_KEY  (0x4)
-#define MENU_KEY  (0x8)
+#define UP_KEY	  (0x8)
+#define DOWN_KEY  (0x2)
+#define MENU_KEY  (0x4)
 
 #define CT_MAX_VALUE	(0xFF)
 #define LIGHT_MAX_VALUE (0xFF)
@@ -24,16 +25,16 @@
 #define LIGHT_MIN_VALUE (1)
 
 enum KEY_STATE {
-	KEY_CHECK = 0, // 按键检测
-	KEY_COMFIRM,   // 按键再次确认
-	KEY_RELEASE,   // 按键释放
-}; // 按键状态
+	KEY_CHECK = 0, 
+	KEY_COMFIRM,   
+	KEY_RELEASE,   
+}; 
 
 enum KEY_ACTION {
 	KEY_NULL = 0,
-	KEY_SHORT, // 短按按键
-	KEY_LONG,  // 长按按键
-}; // 按键动作
+	KEY_SHORT, 
+	KEY_LONG,  
+}; 
 
 enum KEY_NAME {
 	KEY_ENTER = 0, //
@@ -69,7 +70,7 @@ uint8_t key_scan(void)
 	static uint8_t lock = 0;
 	uint8_t last_key_bit = 0;
 	static uint8_t current_key_bit;
-	uint8_t key_bit;
+	uint8_t key_bit = 0;
 	uint8_t i = 0;
 
 	for (i = 0; i < KEY_MAX; i++) {
@@ -134,8 +135,9 @@ void key_status(void)
 	uint8_t read_key_function = 0; // 读取当前按键功能
 	uint8_t flash_data[10] = {0};
 
-	if (sys_tim._10ms_flag) {
-		sys_tim._10ms_flag = 0;
+	// if (sys_tim._10ms_flag) 
+	{
+		// sys_tim._10ms_flag = 0;
 		read_key_function = key_scan();
 
 		if (KEY_CHECK == key_op.state) {
@@ -145,7 +147,6 @@ void key_status(void)
 				oled_par.key_on = 1;
 				switch (read_key_function) {
 				case ENTER_KEY:
-					printf("ENTER_KEY\n");
 					if (FATORY_CONFIRM_PAGE == oled_par.current_index) {
 						// Flash_Read(FLASH_SAVE_DATA_ADDR, flash_data,
 						// sizeof(flash_data));
@@ -192,13 +193,11 @@ void key_status(void)
 					break;
 
 				case UP_KEY:
-					printf("UP_KEY\n");
 					oled_par.current_index =
 						table_op[oled_par.current_index].up;
 					break;
 
 				case DOWN_KEY:
-					printf("DOWN_KEY\n");
 					if ((SENSOR_PARAM_PAGE_1 <= oled_par.current_index &&
 					     oled_par.current_index <= SENSOR_PARAM_PAGE_3) ||
 					    (OLED_PARAM_PAGE_1 <= oled_par.current_index &&
@@ -211,7 +210,6 @@ void key_status(void)
 					break;
 
 				case MENU_KEY:
-					printf("MENU_KEY\n");
 					if (SENSOR_PARAM_CONFIRM_PAGE == oled_par.current_index ||
 					    SENSOR_PARAM_PAGE_1 == oled_par.current_index ||
 					    SENSOR_PARAM_PAGE_2 == oled_par.current_index ||
@@ -251,8 +249,10 @@ void key_thread_entry(void *p1, void *p2, void *p3)
 	}
 
 	for (;;) {
+		k_mutex_lock(&i2c_mutex, K_FOREVER);
 		key_status();
-		k_msleep(1);
+		k_mutex_unlock(&i2c_mutex);
+		k_msleep(10);
 	}
 }
 

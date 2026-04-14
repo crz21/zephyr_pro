@@ -1,6 +1,6 @@
+#include <stdio.h>
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
-#include <stdio.h>
 
 #include "ble_utils.h"
 #include "coap_client_button.h"
@@ -14,7 +14,9 @@
 
 struct SYS_TIM_PARAM sys_tim;
 static struct k_timer sys_tick_timer_id;
-void sys_tick_timer_handle(struct k_timer *timer)
+struct k_mutex i2c_mutex;
+
+void sys_tick_timer_handle(struct k_timer* timer)
 {
     sys_tim._10ms_counter++;
     if (sys_tim._10ms_counter >= 10) {
@@ -41,17 +43,16 @@ void sys_tick_timer_handle(struct k_timer *timer)
 // K_TIMER_DEFINE(sys_tick_timer_id, sys_tick_timer_handle, NULL);
 int main(void)
 {
-    int ret;
+    // int ret;
 
     // if (IS_ENABLED(CONFIG_RAM_POWER_DOWN_LIBRARY)) {
     //     power_down_unused_ram();
     // }
 
-    // k_timer_start(&sys_tick_timer_id, K_MSEC(1), K_NO_WAIT);
-  
 
-	k_timer_init(&sys_tick_timer_id, sys_tick_timer_handle, NULL);
-	k_timer_start(&sys_tick_timer_id, K_MSEC(1), K_MSEC(1));
+    k_mutex_init(&i2c_mutex);
+    k_timer_init(&sys_tick_timer_id, sys_tick_timer_handle, NULL);
+    k_timer_start(&sys_tick_timer_id, K_MSEC(1), K_MSEC(1));
 
     // k_work_queue_init(&coap_client_workq);
     // k_work_queue_start(&coap_client_workq, coap_client_workq_stack_area,
@@ -90,7 +91,7 @@ int main(void)
 
 #endif /* CONFIG_BT_NUS */
 
-    // init_list_storage();
+    init_list_storage();
     // coap_client_utils_init(on_mtd_mode_toggle);
     while (1) {
         k_sleep(K_MSEC(1));
@@ -120,9 +121,8 @@ void sys_thread(void)
             sys_tim._1min_flag = 0;
             oled_par.key_on = 1;
             oled_par.current_index = MAIN_PAGE;
-            oled_clear();
+            clear_oled();
         }
     }
 }
-K_THREAD_DEFINE(sys_thread_id, 1024, sys_thread, NULL, NULL, NULL, 10, 0, 0);
-
+K_THREAD_DEFINE(sys_thread_id, 1024, sys_thread, NULL, NULL, NULL, 2, 0, 0);

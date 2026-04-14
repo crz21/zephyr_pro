@@ -14,5 +14,6 @@ struct SYS_TIM_PARAM {
 
 
 extern struct SYS_TIM_PARAM sys_tim;
+extern struct k_mutex i2c_mutex;
 
 #endif

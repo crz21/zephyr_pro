@@ -43,6 +43,6 @@ struct _table_op {
 
 extern struct _table_op table_op[MAX_INDEX];
 
-void oled_clear(void);
+void clear_oled(void);
 void oled_send_cmd(uint8_t o_command);
 #endif
