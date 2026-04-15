@@ -33,19 +33,18 @@ static struct nvs_fs fs;
 
 static void save_parameter(uint8_t* buf, uint16_t len) { nvs_write(&fs, CONFIG_ID, buf, len); }
 
-static void load_parameter(uint8_t* buf, uint16_t len) { ssize_t rc = nvs_read(&fs, CONFIG_ID, buf, len); }
+static void load_parameter(uint8_t* buf, uint16_t len) { nvs_read(&fs, CONFIG_ID, buf, len); }
 
 // 初始化 NVS 存储
 int init_list_storage(void)
 {
     struct flash_pages_info info;
-    // fs.flash_device = DEVICE_DT_GET(DT_CHOSEN(zephyr_flash_controller));
-    // fs.offset = DT_REG_ADDR(DT_NODE_BY_FIXED_PARTITION_ID(NVS_PARTITION_ID));
+
     fs.flash_device = FLASH_AREA_DEVICE(storage_partition);
     fs.offset = FLASH_AREA_OFFSET(storage_partition);
     flash_get_page_info_by_offs(fs.flash_device, fs.offset, &info);
     fs.sector_size = info.size;
-    fs.sector_count = FS_SECTOR_COUNT;  // 12kb
+    fs.sector_count = FLASH_AREA_SIZE(storage_partition) / fs.sector_size;
 
     return nvs_mount(&fs);
 }

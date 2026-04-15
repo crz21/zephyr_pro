@@ -20,6 +20,28 @@
 	};
 };
 
+/ {
+    /* 1. 删除旧的冲突节点 */
+    soc {
+        flash-controller@4001e000 {
+            flash@0 {
+                partitions {
+                    /delete-node/ partition@f8000;
+                };
+            };
+        };
+    };
+};
+
+&flash0 {
+    partitions {
+        storage_partition: partition@f4000 {
+            label = "storage";
+            reg = <0x000f4000 0x00008000>; // 起始位置提前到 976KB，大小仍为 32KB
+        };
+    };
+};
+
 &i2c0 {
 	compatible = "nordic,nrf-twim";
 	status = "okay";
@@ -33,16 +55,6 @@
 		reg = <0x3c>;
 		label = "OLED_SSD1306";
 		status = "okay";
-
-		// width = <128>;
-		// height = <64>;
-		// segment-offset = <0>;
-		// page-offset = <0>;
-		// display-offset = <0>;
-		// multiplex-ratio = <63>;
-		// segment-remap;
-		// com-invdir;
-		// prechargep = <0x22>;
 	};
 };
 

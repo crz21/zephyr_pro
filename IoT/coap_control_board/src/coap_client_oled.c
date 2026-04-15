@@ -38,44 +38,59 @@ void draw_vision_page(void);
 void draw_param_confirm_page(void);
 void draw_fatory_confirm_page(void);
 void draw_part(uint8_t page_offset, uint8_t column_offset, char* str, uint8_t word_len);
+void draw_provisioning_url_page(void);
 
 struct _draw_word_op welcome_page_op[] = {
-    {2, 4, "\xBB\xB6\xD3\xAD\xCA\xB9\xD3\xC3", 4, &draw_part},          // 欢迎使用
-    {5, 3, "\xC7\xEB\xB0\xB4\xC8\xB7\xC8\xCF\xBC\xFC", 5, &draw_part},  // 请按确认键
+    // {2, 4, "\xBB\xB6\xD3\xAD\xCA\xB9\xD3\xC3", 4, &draw_part},          // 欢迎使用
+    // {5, 3, "\xC7\xEB\xB0\xB4\xC8\xB7\xC8\xCF\xBC\xFC", 5, &draw_part},  // 请按确认键
+
+    {2, 4, "欢迎使用", 4, &draw_part},          // 欢迎使用
+    {5, 3, "请按确认键", 5, &draw_part},  // 请按确认键
 };
 
 struct _draw_word_op main_page_op[] = {
-    {0, 0, "\xD7\xB4\xCC\xAC", 2, &draw_part},                   // 状态
-    {3, 0, "\xD3\xD0\xC8\xCB\xBE\xE0\xC0\xEB", 4, &draw_part},   // 有人距离
-    {6, 0, "\xCE\xDE\xC8\xCB\xBE\xE0\xC0\xEB", 4, &draw_part},   // 无人距离
+    // {0, 0, "\xD7\xB4\xCC\xAC", 2, &draw_part},                   // 状态
+    // {3, 0, "\xD3\xD0\xC8\xCB\xBE\xE0\xC0\xEB", 4, &draw_part},   // 有人距离
+    // {6, 0, "\xCE\xDE\xC8\xCB\xBE\xE0\xC0\xEB", 4, &draw_part},   // 无人距离
+
+    {0, 0, "客厅", 2, &draw_part},                   // 状态
+    {3, 0, "房间", 4, &draw_part},   // 有人距离
+    {6, 0, "厨房", 4, &draw_part},   // 无人距离
 };
 
 struct _draw_word_op set_page1_op[] = {
-    {0, 1, "\xB2\xCE\xCA\xFD\xC9\xE8\xD6\xC3", 4, &draw_part},  // 参数设置
-    {3, 1, "\xC6\xC1\xC4\xBB\xC9\xE8\xD6\xC3", 4, &draw_part},  // 屏幕设置
-    {6, 1, "\xB0\xE6\xB1\xBE", 2, &draw_part},                  // 版本
+    // {0, 1, "\xB2\xCE\xCA\xFD\xC9\xE8\xD6\xC3", 4, &draw_part},  // 参数设置
+    // {3, 1, "\xC6\xC1\xC4\xBB\xC9\xE8\xD6\xC3", 4, &draw_part},  // 屏幕设置
+    // {6, 1, "\xB0\xE6\xB1\xBE", 2, &draw_part},                  // 版本
+
+    {0, 1, "参数设置", 4, &draw_part},  // 参数设置
+    {3, 1, "屏幕设置", 4, &draw_part},  // 屏幕设置
+    {6, 1, "版本", 2, &draw_part},                  // 版本
 };
 
 struct _draw_word_op set_page2_op[] = {
-    {0, 1, "\xBB\xD6\xB8\xB4\xC4\xAC\xC8\xCF", 4, &draw_part},  // 恢复默认
+    // {0, 1, "\xBB\xD6\xB8\xB4\xC4\xAC\xC8\xCF", 4, &draw_part},  // 恢复默认
+
+    {0, 1, "恢复默认", 4, &draw_part},  // 恢复默认
+    {3, 1, "组网", 2, &draw_part},  // 屏幕设置
 };
 
 struct _draw_word_op sensor_param_page_op[] = {
-    {0, 1, "\xBE\xE0\xC0\xEB", 2, &draw_part},                  // 距离
-    {3, 1, "\xC1\xE9\xC3\xF4\xB6\xC8", 3, &draw_part},          // 灵敏度
-    {6, 1, "\xB7\xA2\xC9\xE4\xB9\xA6\xC2\xCA", 4, &draw_part},  // 发射功率
+    {0, 1, "距离", 2, &draw_part},                  // 距离
+    {3, 1, "灵敏度", 3, &draw_part},          // 灵敏度
+    {6, 1, "发射功率", 4, &draw_part},  // 发射功率
 };
 
 struct _draw_word_op oled_param_page_op[] = {
-    {0, 1, "\xC1\xC1\xB6\xC8", 2, &draw_part},                  // 亮度
-    {3, 1, "\xCF\xA2\xC6\xC1\xCA\xB1\xBC\xE4", 4, &draw_part},  // 息屏时间
+    {0, 1, "亮度", 2, &draw_part},                  // 亮度
+    {3, 1, "息屏时间", 4, &draw_part},  // 息屏时间
 };
 
 struct _draw_word_op param_word_op[] = {
-    {0, 7, "\xC3\xBB\xD3\xD0\xC4\xBF\xB1\xEA", 4, &draw_part},  // 没有目标
-    {0, 7, "\xD4\xCB\xB6\xAF\xC4\xBF\xB1\xEA", 4, &draw_part},  // 运动目标
-    {0, 7, "\xBE\xB2\xD6\xB9\xC4\xBF\xB1\xEA", 4, &draw_part},  // 静止目标
-    {0, 7, "\xD4\xCB\xB6\xAF\xBE\xB2\xD6\xB9", 4, &draw_part},  // 运动静止
+    {0, 7, "没有目标", 4, &draw_part},  // 没有目标
+    {0, 7, "运动目标", 4, &draw_part},  // 运动目标
+    {0, 7, "静止目标", 4, &draw_part},  // 静止目标
+    {0, 7, "运动静止", 4, &draw_part},  // 运动静止
 };
 
 struct _table_op table_op[MAX_INDEX] = {
@@ -86,10 +101,11 @@ struct _table_op table_op[MAX_INDEX] = {
     {MAIN_PAGE, MAIN_PAGE, MAIN_PAGE, SET_PAGE_1, MAIN_PAGE, MAIN_PAGE, &draw_main_page},
 
     /* 1级菜单 */
-    {SET_PAGE_1, SET_PAGE_2, SET_PAGE_4, SENSOR_PARAM_PAGE_1, SET_PAGE_1, SET_PAGE_3, &draw_set_page},
+    {SET_PAGE_1, SET_PAGE_2, SET_PAGE_5, SENSOR_PARAM_PAGE_1, SET_PAGE_1, SET_PAGE_3, &draw_set_page},
     {SET_PAGE_2, SET_PAGE_3, SET_PAGE_1, OLED_PARAM_PAGE_1, SET_PAGE_1, SET_PAGE_3, &draw_set_page},
     {SET_PAGE_3, SET_PAGE_4, SET_PAGE_2, VISION_PAGE, SET_PAGE_1, SET_PAGE_3, &draw_set_page},
-    {SET_PAGE_4, SET_PAGE_1, SET_PAGE_3, FATORY_CONFIRM_PAGE, SET_PAGE_4, SET_PAGE_4, &draw_set_page},
+    {SET_PAGE_4, SET_PAGE_5, SET_PAGE_3, FATORY_CONFIRM_PAGE, SET_PAGE_4, SET_PAGE_5, &draw_set_page},
+    {SET_PAGE_5, SET_PAGE_1, SET_PAGE_4, PROVISIONING_URL_PAGE, SET_PAGE_4, SET_PAGE_5, &draw_set_page},
 
     /* 2级菜单 */
     {SENSOR_PARAM_PAGE_1, SENSOR_PARAM_PAGE_2, SENSOR_PARAM_PAGE_1, SENSOR_PARAM_CONFIRM_PAGE, SENSOR_PARAM_PAGE_1,
@@ -103,6 +119,7 @@ struct _table_op table_op[MAX_INDEX] = {
     {OLED_PARAM_PAGE_2, OLED_PARAM_PAGE_1, OLED_PARAM_PAGE_2, OLED_PARAM_CONFIRM_PAGE, OLED_PARAM_PAGE_1,
      OLED_PARAM_PAGE_2, &draw_oled_param_page},
     {VISION_PAGE, VISION_PAGE, VISION_PAGE, SET_PAGE_3, VISION_PAGE, VISION_PAGE, &draw_vision_page},
+    {PROVISIONING_URL_PAGE, PROVISIONING_URL_PAGE, PROVISIONING_URL_PAGE, SET_PAGE_5, PROVISIONING_URL_PAGE, PROVISIONING_URL_PAGE, &draw_provisioning_url_page},
 
     /* 确认菜单 */
     {SENSOR_PARAM_CONFIRM_PAGE, SENSOR_PARAM_CONFIRM_PAGE, SENSOR_PARAM_CONFIRM_PAGE, SENSOR_PARAM_PAGE_1,
@@ -160,6 +177,17 @@ void draw_half_words(uint8_t page_offset, uint8_t column_offset, uint8_t* half_w
             oled_send_data(ptr, 8);
         }
     }
+    //         }
+    //     }
+    // }
+    // draw_words(page_offset, column_offset, strw, word_len);
+
+    // uint8_t strw[512] = {0};
+    // uint16_t i, j;
+    // uint8_t *p_str = (uint8_t *)str;
+    // uint8_t k = 0;
+
+    // 遍历传入的字符串
 }
 
 void draw_words(uint8_t page_offset, uint8_t column_offset, uint8_t* word, uint8_t word_num)
@@ -218,20 +246,61 @@ void clear_half_part(uint8_t page_offset, uint8_t column_offset, char* str, uint
 
 void draw_part(uint8_t page_offset, uint8_t column_offset, char* str, uint8_t word_len)
 {
-    uint8_t strw[512] = {0};
-    uint16_t i, j, k;
-    uint16_t total_words = sizeof(gbk_code) / 2;
+    // uint8_t strw[512] = {0};
+    // uint16_t i, j, k;
+    // uint16_t total_words = sizeof(gbk_code) / 2;
 
-    for (k = 0; k < word_len; k++) {
-        for (i = 0; i < total_words; i++) {
-            if (0 == memcmp(str + k * 2, gbk_code + i * 2, 2)) {
+    // for (k = 0; k < word_len; k++) {
+    //     for (i = 0; i < total_words; i++) {
+    //         if (0 == memcmp(str + k * 2, gbk_code + i * 2, 2)) {
+    //             for (j = 0; j < 32; j++) {
+    //                 strw[k * 32 + j] = font_size_16x16[i * 32 + j];
+    //             }
+    //         }
+    //     }
+    // }
+    // draw_words(page_offset, column_offset, strw, word_len);
+
+    uint8_t strw[512] = {0};
+    uint16_t j;
+    uint8_t *p_str = (uint8_t *)str;
+    uint8_t k = 0;
+
+    // 遍历传入的字符串
+    while (*p_str != '\0' && k < word_len) {
+        uint8_t step = 0;
+        
+        // 判断当前字符占几个字节 (UTF-8 标准)
+        if (*p_str < 0x80) step = 1;        // ASCII (不处理，或调用 half_draw)
+        else if (*p_str < 0xE0) step = 2;   // 2字节字符
+        else if (*p_str < 0xF0) step = 3;   // 3字节汉字 (最常用)
+        else step = 4;
+
+        // 在 utf8_code 库中寻找匹配
+        uint8_t *p_table = (uint8_t *)utf8_code;
+        uint16_t table_idx = 0;
+        bool found = false;
+
+        while (*p_table != '\0') {
+            // 同样需要判断库里那个字占几字节
+            uint8_t t_step = (*p_table < 0xE0) ? 2 : 3; 
+
+            if (step == t_step && memcmp(p_str, p_table, step) == 0) {
+                // 找到了，拷贝 16x16 点阵
                 for (j = 0; j < 32; j++) {
-                    strw[k * 32 + j] = font_size_16x16[i * 32 + j];
+                    strw[k * 32 + j] = font_size_16x16[table_idx * 32 + j];
                 }
+                found = true;
+                break;
             }
+            p_table += t_step;
+            table_idx++;
         }
+
+        p_str += step; // 移动到下一个字
+        k++;           // 已处理的显示字数
     }
-    draw_words(page_offset, column_offset, strw, word_len);
+    draw_words(page_offset, column_offset, strw, k);
 }
 
 void draw_half_part(uint8_t page_offset, uint8_t column_offset, char* str, uint8_t word_len)
@@ -240,8 +309,8 @@ void draw_half_part(uint8_t page_offset, uint8_t column_offset, char* str, uint8
     uint16_t i, j, k;
 
     for (k = 0; k < word_len; k++) {
-        for (i = 0; i < sizeof(gbk_size_8x16_code); i++) {
-            if (0 == memcmp(str + k, gbk_size_8x16_code + i, 1)) {
+        for (i = 0; i < sizeof(utf8_size_8x16_code); i++) {
+            if (0 == memcmp(str + k, utf8_size_8x16_code + i, 1)) {
                 for (j = 0; j < 16; j++) {
                     strw[k * 16 + j] = font_size_8x16[i * 16 + j];
                 }
@@ -294,13 +363,11 @@ void draw_main_page(void)
     if (oled_par.pre_index != oled_par.current_index) {
         clear_oled();
     }
-    printf("pre_index:%x current_index%x\n", oled_par.pre_index, oled_par.current_index);
     oled_par.pre_index = oled_par.current_index;
 
     for (i = 0; i < sizeof(main_page_op) / sizeof(main_page_op[0]); i++) {
         main_page_op[i].dram_func(main_page_op[i].page_offset, main_page_op[i].column_offset, main_page_op[i].ptr_word,
                                   main_page_op[i].word_len);
-        printf("page_offset:%x column_offset:%x word_len:%x\n", main_page_op[i].page_offset, main_page_op[i].column_offset, main_page_op[i].word_len);
     }
     
     // sta = test_get_buf[2];
@@ -344,9 +411,9 @@ void draw_set_page(void)
     for (i = 0; i < len * 2 + 1; i += 3) {
         clear_half_part(i, 0, 0, 1);
     }
-printf("c_page : %d  m_page : %d\n", oled_par.current_index, min_page);
+
     draw_half_part((oled_par.current_index - min_page) * 3, 0, ">", 1);
-printf("page : %d \n", oled_par.current_index - min_page);
+
     for (i = 0; i < len; i++) {
         set_page_op[i].dram_func(set_page_op[i].page_offset, set_page_op[i].column_offset, set_page_op[i].ptr_word,
                                  set_page_op[i].word_len);
@@ -470,8 +537,20 @@ void draw_vision_page(void)
     }
 
     oled_par.pre_index = oled_par.current_index;
-    draw_part(3, 2, "\xB0\xE6\xB1\xBE\xBA\xC5", 3);  // 版本号
+    // draw_part(3, 2, "\xB0\xE6\xB1\xBE\xBA\xC5", 3);  // 版本号
+    draw_part(3, 2, "版本号", 3);
     draw_half_part(3, 8, ":V1.0", 5);
+}
+
+void draw_provisioning_url_page(void)
+{
+    if (oled_par.pre_index != oled_par.current_index) {
+        clear_oled();
+    }
+
+    oled_par.pre_index = oled_par.current_index;
+    draw_part(3, 2, "组网中", 3);  
+    draw_half_part(3, 8, "...", 3);
 }
 
 void draw_param_confirm_page(void)
@@ -481,7 +560,8 @@ void draw_param_confirm_page(void)
     }
 
     oled_par.pre_index = oled_par.current_index;
-    draw_part(3, 2, "\xC8\xB7\xB6\xA8\xB8\xFC\xB8\xC4\xB2\xCE\xCA\xFD", 6);  // 确定更改参数
+    // draw_part(3, 2, "\xC8\xB7\xB6\xA8\xB8\xFC\xB8\xC4\xB2\xCE\xCA\xFD", 6);  // 确定更改参数
+    draw_part(3, 2, "确定更改参数", 6);
     draw_half_part(3, 14, "?", 1);
 }
 
@@ -492,7 +572,8 @@ void draw_fatory_confirm_page(void)
     }
 
     oled_par.pre_index = oled_par.current_index;
-    draw_part(3, 2, "\xC8\xB7\xC8\xCF\xBB\xD6\xB8\xB4\xC4\xAC\xC8\xCF", 6);  // 确认恢复默认
+    // draw_part(3, 2, "\xC8\xB7\xC8\xCF\xBB\xD6\xB8\xB4\xC4\xAC\xC8\xCF", 6);  // 确认恢复默认
+    draw_part(3, 2, "确认恢复默认", 6);  // 确认恢复默认
     draw_half_part(3, 14, "?", 1);
 }
 

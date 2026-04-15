@@ -3,9 +3,10 @@
 
 #define GBK_LEN (100)
 
-extern const uint8_t gbk_size_8x16_code[100];
 extern const uint8_t font_size_8x16[];
-extern const uint8_t gbk_code[GBK_LEN];
 extern const uint8_t font_size_16x16[];
-
+// extern const uint8_t gbk_size_8x16_code[100];
+// extern const uint8_t gbk_code[GBK_LEN];
+extern const uint8_t utf8_size_8x16_code[100];
+extern const uint8_t utf8_code[];
 #endif

@@ -53,7 +53,7 @@ int main(void)
     k_mutex_init(&i2c_mutex);
     k_timer_init(&sys_tick_timer_id, sys_tick_timer_handle, NULL);
     k_timer_start(&sys_tick_timer_id, K_MSEC(1), K_MSEC(1));
-
+    coap_client_utils_init();
     // k_work_queue_init(&coap_client_workq);
     // k_work_queue_start(&coap_client_workq, coap_client_workq_stack_area,
     //                    K_THREAD_STACK_SIZEOF(coap_client_workq_stack_area), COAP_CLIENT_WORKQ_PRIORITY, NULL);
