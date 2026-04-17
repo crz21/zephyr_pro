@@ -12,7 +12,6 @@ struct SYS_TIM_PARAM {
     uint8_t _1min_flag;
 };
 
-
 extern struct SYS_TIM_PARAM sys_tim;
 extern struct k_mutex i2c_mutex;
 

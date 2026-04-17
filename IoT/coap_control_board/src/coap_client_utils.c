@@ -45,8 +45,6 @@ enum light_command {
     THREAD_COAP_UTILS_LIGHT_0_CMD_TOGGLE = '0',
 };
 
-// mtd_mode_toggle_cb_t on_mtd_mode_toggle;
-
 void send_provisioning_request(struct k_work* item)
 {
     otError error = OT_ERROR_NONE;
@@ -111,19 +109,18 @@ int coap_client_utils_init(void)
     otError error;
     int ret = 0;
 
-    // on_mtd_mode_toggle = on_toggle;
     srv_context.ot = openthread_get_default_instance();
 
-    for (int i = 0; i < 4; i++) {
-        if (!gpio_is_ready_dt(&leds[i])) {
-            return 0;
-        }
+    // for (int i = 0; i < 4; i++) {
+    //     if (!gpio_is_ready_dt(&leds[i])) {
+    //         return 0;
+    //     }
 
-        ret = gpio_pin_configure_dt(&leds[i], GPIO_OUTPUT_ACTIVE);
-        if (ret < 0) {
-            return 0;
-        }
-    }
+    //     ret = gpio_pin_configure_dt(&leds[i], GPIO_OUTPUT_ACTIVE);
+    //     if (ret < 0) {
+    //         return 0;
+    //     }
+    // }
 
     if (!srv_context.ot) {
         LOG_ERR("There is no valid OpenThread instance");
@@ -137,13 +134,13 @@ int coap_client_utils_init(void)
         goto end;
     }
 
-	k_work_queue_init(&coap_client_workq);
+	// k_work_queue_init(&coap_client_workq);
 
-	k_work_queue_start(&coap_client_workq, coap_client_workq_stack_area,
-			   K_THREAD_STACK_SIZEOF(coap_client_workq_stack_area),
-			   COAP_CLIENT_WORKQ_PRIORITY, NULL);
+	// k_work_queue_start(&coap_client_workq, coap_client_workq_stack_area,
+	// 		   K_THREAD_STACK_SIZEOF(coap_client_workq_stack_area),
+	// 		   COAP_CLIENT_WORKQ_PRIORITY, NULL);
 
-	k_work_init(&provisioning_work, send_provisioning_request);
+	// k_work_init(&provisioning_work, send_provisioning_request);
 
     openthread_state_changed_callback_register(&ot_state_chaged_cb);
     openthread_run();

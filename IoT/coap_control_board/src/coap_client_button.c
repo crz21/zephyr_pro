@@ -189,8 +189,9 @@ void key_status(void)
 						// g_oled_close_time = oled_par.oled_close_time *
 						// 100;
 					} else if (SET_PAGE_5 == oled_par.current_index) {
-						printf("key_coap\n");
+#if CONFIG_OPENTHREAD
 						coap_client_send_provisioning_request();
+#endif
 					}
 					oled_par.current_index =
 						table_op[oled_par.current_index].enter;

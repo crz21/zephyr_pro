@@ -2,7 +2,22 @@
  *
  * SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
  */
-
+&qspi { 
+	status = "disabled"; 
+};
+/ {
+    soc {
+        flash-controller@4001e000 {
+            flash@0 {
+                partitions {
+                    /* 1. 先彻底删除旧的存储分区定义，防止残留干扰 */
+                    /delete-node/ partition@f8000;
+                    /delete-node/ partition@fc000;
+                };
+            };
+        };
+    };
+};
 &pinctrl {
 	i2c0_default: i2c0_default {
 		group1 {
@@ -20,27 +35,19 @@
 	};
 };
 
-/ {
-    /* 1. 删除旧的冲突节点 */
-    soc {
-        flash-controller@4001e000 {
-            flash@0 {
-                partitions {
-                    /delete-node/ partition@f8000;
-                };
-            };
+&flash0 {
+    partitions {
+        storage_partition: partition@f8000 {
+            label = "storage";
+            reg = <0x000f8000 0x00004000>; 
+        };
+		user_storage: partition@fc000 {
+            label = "user_storage";
+            reg = <0x000fc000 0x00004000>; /* 16KB */
         };
     };
 };
 
-&flash0 {
-    partitions {
-        storage_partition: partition@f4000 {
-            label = "storage";
-            reg = <0x000f4000 0x00008000>; // 起始位置提前到 976KB，大小仍为 32KB
-        };
-    };
-};
 
 &i2c0 {
 	compatible = "nordic,nrf-twim";

@@ -3,10 +3,16 @@
 
 #include <stdint.h>
 
+enum _op_id {
+    // NULL_ID = 0,              //
+    FIRST_USAGE_FLAG_ID=0x10,      //
+    OLED_CONFIG_ID,           //
+    NVS_ID_FULL_WHITELIST,//
+    MAX_ID                    //
+};
+
+// void init_list_storage(void);
 int init_list_storage(void);
-uint8_t read_ip_addr(uint8_t* ip_buf, uint8_t ip_len);
-uint8_t write_ip_addr(uint8_t* ip_buf, uint8_t ip_len);
-uint8_t read_first_time_usage_flag(void);
-void save_first_time_usage_flag(uint8_t flag);
-void read_param(uint8_t* param_arr);
+void poweron_read_param(void);
+void read_oled_light(void);
 #endif
